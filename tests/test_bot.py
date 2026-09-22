@@ -16,6 +16,8 @@ from bot import keyboards, texts
 from bot.handlers.mode_formula import FAILURES, FIELDS, REFUSALS
 from bot.main import COMMANDS
 from bot.middlewares.single_flight import SingleFlight
+from core.analysis import Analysis, Compatibility, Reading
+from core.analysis import Verdict as AnalysisVerdict
 from core.catalog import Catalog
 from core.claude import Outcome
 from core.formula import CAUSES, CHANGE_TYPES, Formula, ParadoxVerdict, all_formulas
@@ -247,3 +249,96 @@ async def test_concurrent_presses_let_exactly_one_through() -> None:
 
     await asyncio.gather(*(press() for _ in range(5)))
     assert results.count(True) == 1
+
+
+# --------------------------------------------------------------------------- #
+# Mode 2 — the compatibility markers
+# --------------------------------------------------------------------------- #
+
+
+def analysis_with(**overrides: str) -> Analysis:
+    compatibility = {
+        f"{n}{k}-{c}": Compatibility(
+            AnalysisVerdict(overrides.get(f"{n}{k}_{c}", "contradiction")),
+            "если считать реку живым существом"
+            if overrides.get(f"{n}{k}_{c}") == "conditional"
+            else None,
+        )
+        for n in CHANGE_TYPES
+        for k in ("е", "и")
+        for c in CAUSES
+    }
+    return Analysis(True, (Reading(1, "е", "Ф", "обоснование"),), compatibility)
+
+
+def test_manual_type_buttons_carry_the_best_verdict_under_them() -> None:
+    analysis = analysis_with(**{"1е_Ф": "ok", "2и_Д": "conditional"})
+    labels = {b.text for row in keyboards.manual_types(analysis).inline_keyboard for b in row}
+    assert any(label.startswith("✅ 1") for label in labels)
+    assert any(label.startswith("⚠️ 2") for label in labels)
+    assert any(label.startswith("❌ 3") for label in labels)
+
+
+def test_a_branch_is_not_marked_greener_than_its_contents() -> None:
+    analysis = analysis_with()  # everything contradicts
+    labels = [b.text for row in keyboards.manual_types(analysis).inline_keyboard for b in row]
+    assert not any("✅" in label for label in labels)
+
+
+def test_cause_buttons_carry_the_exact_verdict() -> None:
+    analysis = analysis_with(**{"1е_Ф": "ok", "1е_М": "conditional"})
+    labels = {
+        b.text for row in keyboards.manual_causes(analysis, 1, "е").inline_keyboard for b in row
+    }
+    assert "✅ Ф · Формальная" in labels
+    assert "⚠️ М · Материальная" in labels
+    assert "❌ Д · Действующая" in labels
+
+
+def test_the_contradiction_keyboard_offers_all_three_ways_out() -> None:
+    actions = {
+        b.callback_data for row in keyboards.contradiction(1, "е", "Д").inline_keyboard for b in row
+    }
+    assert "man:types" in actions  # pick another code
+    assert "sit:again" in actions  # rewrite the situation
+    assert "force:1:е:Д" in actions  # generate anyway, adapting the text
+
+
+def test_the_revelation_cause_is_never_constrained() -> None:
+    """The left half is fixed by the text; this half is the author's choice."""
+    buttons = [b for row in keyboards.situation_cause_2(1, "е", "Ф").inline_keyboard for b in row]
+    assert len(buttons) == len(CAUSES)
+    assert not any("❌" in b.text or "⚠️" in b.text for b in buttons)
+    # Each still states the paradox it produces.
+    for button in buttons:
+        assert "—" in button.text
+
+
+def test_readings_keyboard_always_offers_the_manual_route() -> None:
+    markup = keyboards.readings([Reading(1, "е", "Ф", "обоснование")])
+    actions = {b.callback_data for row in markup.inline_keyboard for b in row}
+    assert "man:types" in actions
+    assert "sit:again" in actions
+    assert "read:1:е:Ф" in actions
+
+
+def test_mode_2_texts_explain_the_markers() -> None:
+    assert "✅" in texts.MANUAL_INTRO
+    assert "⚠️" in texts.MANUAL_INTRO
+    assert "❌" in texts.MANUAL_INTRO
+
+
+def test_the_contradiction_text_quotes_the_rule_rather_than_refusing() -> None:
+    note = texts.contradiction_note(1, "и", "Ф")
+    assert "определяется" in note
+    assert "нельзя" not in note.lower()
+
+
+def test_the_adapted_notice_shows_the_original() -> None:
+    notice = texts.adapted_notice("Деревня пустеет.")
+    assert "Деревня пустеет." in notice
+    assert "переписано" in notice
+
+
+def test_situation_command_is_advertised() -> None:
+    assert "situation" in {command.command for command in COMMANDS}

@@ -22,7 +22,9 @@ from core.quota import (
     Mode,
     Verdict,
     charge,
+    charge_analysis,
     check,
+    check_analysis,
     local_today,
     month_spend,
     record_failure,
@@ -296,3 +298,48 @@ def test_the_day_turns_over_at_midnight_moscow_not_utc() -> None:
     """A user in Moscow gets a fresh allowance when their day starts."""
     assert local_today(datetime(2026, 9, 22, 20, 59, tzinfo=UTC)).day == 22
     assert local_today(datetime(2026, 9, 22, 21, 0, tzinfo=UTC)).day == 23
+
+
+# --------------------------------------------------------------------------- #
+# The analysis allowance
+# --------------------------------------------------------------------------- #
+
+
+async def test_analyses_have_their_own_allowance(session: AsyncSession, user: User) -> None:
+    config = settings()
+    for _ in range(5):
+        decision = await check_analysis(session, user, config)
+        assert decision.verdict is Verdict.FREE
+        await charge_analysis(session, user, Decimal("0.07"))
+
+    assert (await check_analysis(session, user, config)).verdict is Verdict.DENIED_DAILY_LIMIT
+    # ...and the generation allowances are untouched by any of it.
+    assert (await check(session, user, Mode.FORMULA, config)).verdict is Verdict.FREE
+
+
+async def test_an_analysis_costs_no_units(session: AsyncSession, user: User) -> None:
+    assert (await check_analysis(session, user, settings())).units == 0
+
+
+async def test_analysis_spend_lands_in_the_ledger(session: AsyncSession, user: User) -> None:
+    await charge_analysis(session, user, Decimal("0.0712"))
+    assert await spend(session, local_today()) == Decimal("0.0712")
+
+
+async def test_the_budget_cap_stops_analyses_too(session: AsyncSession, user: User) -> None:
+    await spend_free(session, local_today(), "4.00")
+    assert (await check_analysis(session, user, settings())).verdict is Verdict.DENIED_BUDGET
+
+
+async def test_the_owner_analyses_without_limit(session: AsyncSession, user: User) -> None:
+    user.is_owner = True
+    config = settings()
+    for _ in range(12):
+        decision = await check_analysis(session, user, config)
+        assert decision.verdict is Verdict.FREE
+        await charge_analysis(session, user, Decimal("0.07"))
+
+
+async def test_a_blocked_user_cannot_analyse(session: AsyncSession, user: User) -> None:
+    user.is_blocked = True
+    assert (await check_analysis(session, user, settings())).verdict is Verdict.DENIED_BLOCKED

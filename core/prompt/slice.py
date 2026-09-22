@@ -84,6 +84,10 @@ class UserInput:
     #: Mode 2 only: set when the user overrode the bot's reading with a
     #: "conditional" choice. Carried as a stated premise of the generation.
     condition: str | None = None
+    #: Mode 2 only: the user chose a code their own text contradicts. A formula
+    #: cannot be forced onto a text, but the text can be adjusted to the
+    #: formula — minimally, and visibly.
+    adapt_expectation: bool = False
 
     def __post_init__(self) -> None:
         for name, limit in (
@@ -191,6 +195,18 @@ def build_slice(
                 "",
                 "Формула применима к этой ситуации при одном допущении, "
                 "которое следует считать верным: " + user_input.condition,
+            ]
+        if user_input.adapt_expectation:
+            parts += [
+                "",
+                "Внимание: выбранная формула этой ситуации не соответствует. "
+                "Пользователь знает об этом и просит сгенерировать всё равно. "
+                "Перепиши его Ожидание **минимально** — измени ровно столько, "
+                "сколько требует выбранный код, и ни словом больше: сохрани "
+                "материал, героев, место и тон исходного описания. Начни "
+                "ответ с блока «Изменённое Ожидание», где приведи новый текст "
+                "и одной фразой скажи, что именно пришлось изменить и почему. "
+                "Затем два твиста по обычной схеме.",
             ]
     parts += ["", user_input.render()]
 

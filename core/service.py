@@ -18,20 +18,29 @@ user nothing.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from bot.config import Settings
+from core.analysis import Analysis, analyse
 from core.catalog import Catalog, Coverage
 from core.claude import ClaudeClient, ClaudeError, Completion
 from core.costs import cost_usd
 from core.formula import Formula
 from core.prompt.builder import PromptBuilder
 from core.prompt.slice import UserInput, build_slice
-from core.quota import Decision, Mode, charge, check, record_failure
+from core.quota import (
+    Decision,
+    Mode,
+    charge,
+    charge_analysis,
+    check,
+    check_analysis,
+    record_failure,
+)
 from db.models import ApiCall, Generation, User
 from db.session import transaction
 
@@ -70,9 +79,12 @@ class GenerationService:
         mode: Mode = Mode.FORMULA,
         user_input: UserInput | None = None,
         seed: int | None = None,
+        adapt_expectation: bool = False,
     ) -> Result:
         """Run one generation end to end. Raises on refusal or failure."""
         user_input = user_input or UserInput()
+        if adapt_expectation:
+            user_input = replace(user_input, adapt_expectation=True)
 
         # 1. May this run?
         async with transaction(self.sessions) as session:
@@ -114,6 +126,12 @@ class GenerationService:
                 audience=user_input.audience,
                 user_expectation=user_input.situation,
                 override_condition=user_input.condition,
+                expectation_adapted=adapt_expectation,
+                override_verdict=(
+                    "contradiction"
+                    if adapt_expectation
+                    else ("conditional" if user_input.condition else None)
+                ),
                 example_seed=catalogue.seed,
                 block_b=slice_text,
                 profile=self.builder.profile.value,
@@ -162,7 +180,67 @@ class GenerationService:
             completion=completion,
         )
 
-    async def _record_failure(self, user_id: int, error: ClaudeError, decision: Decision) -> None:
+    async def analyse_situation(self, user_id: int, situation: str) -> Analysis:
+        """Read a described situation into the left half of a formula.
+
+        Charged against its own small daily allowance, never against a
+        generation: the user has not received a twist yet.
+        """
+        async with transaction(self.sessions) as session:
+            user = await self._user(session, user_id)
+            decision = await check_analysis(session, user, self.settings)
+            if not decision.allowed:
+                raise QuotaExceeded(decision)
+
+        system = self.builder.build_core().text
+        try:
+            analysis = await analyse(
+                self.claude.messages,
+                system,
+                situation,
+                model=self.settings.model,
+                effort=self.settings.analysis_effort,
+                max_tokens=self.settings.max_tokens,
+            )
+        except ClaudeError as error:
+            await self._record_failure(user_id, error, decision, purpose="analysis")
+            raise
+
+        async with transaction(self.sessions) as session:
+            user = await self._user(session, user_id)
+            session.add(
+                ApiCall(
+                    user_id=user.id,
+                    purpose="analysis",
+                    model=self.settings.model,
+                    effort=self.settings.analysis_effort,
+                    input_tokens=analysis.usage.input_tokens,
+                    output_tokens=analysis.usage.output_tokens,
+                    cache_creation_input_tokens=analysis.usage.cache_creation_input_tokens,
+                    cache_read_input_tokens=analysis.usage.cache_read_input_tokens,
+                    cost_usd=analysis.cost_usd,
+                    was_free=True,
+                )
+            )
+            # An unclassifiable situation is the classifier working, not
+            # failing, so it is charged like any other analysis.
+            await charge_analysis(session, user, analysis.cost_usd)
+
+        logger.info(
+            "analysed a situation for user %s: classifiable=%s readings=%d",
+            user_id,
+            analysis.classifiable,
+            len(analysis.readings),
+        )
+        return analysis
+
+    async def _record_failure(
+        self,
+        user_id: int,
+        error: ClaudeError,
+        decision: Decision,
+        purpose: str = "generation",
+    ) -> None:
         """Bank what a failed call cost, without touching the user's quota."""
         cost = (
             cost_usd(error.usage, self.settings.model) if error.usage.total_input else Decimal("0")
@@ -172,7 +250,7 @@ class GenerationService:
             session.add(
                 ApiCall(
                     user_id=user.id,
-                    purpose="generation",
+                    purpose=purpose,
                     model=self.settings.model,
                     effort=self.settings.generation_effort,
                     input_tokens=error.usage.input_tokens,
@@ -185,7 +263,7 @@ class GenerationService:
                 )
             )
             await record_failure(session, cost, was_free=decision.was_free)
-        logger.warning("generation failed for user %s: %s", user_id, error)
+        logger.warning("%s failed for user %s: %s", purpose, user_id, error)
 
     @staticmethod
     async def _user(session: Session, user_id: int) -> User:

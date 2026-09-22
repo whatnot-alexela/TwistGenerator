@@ -962,7 +962,7 @@ matter until he has read them.
 | 2 | Prompt core behind a profile switch, redaction and correction layers, condensed variants — the quality gate for everything downstream | **done**, awaiting the author's reading of the three `*.condensed.md` variants |
 | 3 | Mode 1 end to end: slice, API wrapper, database, quotas, budget caps, cost logging, rating | **built and tested against a stub; no real API call has been made yet** |
 | 4 | `/export`, `/stats`, owner tooling | **done** |
-| 5 | Mode 2: analysis call, compatibility map, override and contradiction handling | not started |
+| 5 | Mode 2: analysis call, compatibility map, override and contradiction handling | **done** (stub-tested) |
 | 6 | Telegram Stars payments | not started |
 | 7 | Deployment to the European VPS, methodology page on `kiloslov.ru`, stage-1 acceptance testing | not started |
 

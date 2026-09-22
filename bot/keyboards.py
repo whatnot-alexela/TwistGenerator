@@ -7,10 +7,13 @@ few bytes, and `ft:1е` is legible in a log.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import texts
+from core.analysis import Analysis, Reading
 from core.formula import CAUSES, CHANGE_KINDS, CHANGE_TYPES, classify_paradox
 
 
@@ -104,3 +107,99 @@ def rating(generation_id: int, current: int | None = None) -> InlineKeyboardMark
 
 def kinds_label(change_kind: str) -> str:
     return CHANGE_KINDS[change_kind]
+
+
+# --------------------------------------------------------------------------- #
+# Mode 2 — from a described situation
+# --------------------------------------------------------------------------- #
+
+
+def readings(options: Sequence[Reading]) -> InlineKeyboardMarkup:
+    """The one or two readings the analysis proposed, plus the manual way out."""
+    builder = InlineKeyboardBuilder()
+    for index, reading in enumerate(options, start=1):
+        builder.button(
+            text=f"Вариант {index}: {reading.prefix}",
+            callback_data=f"read:{reading.change_type}:{reading.change_kind}:{reading.cause_1}",
+        )
+    builder.button(text="Выбрать самому", callback_data="man:types")
+    builder.button(text="Переписать ситуацию", callback_data="sit:again")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def manual_types(analysis: Analysis) -> InlineKeyboardMarkup:
+    """Every change type, marked with the best verdict available under it.
+
+    A branch is never shown as ✅ when nothing inside it is.
+    """
+    builder = InlineKeyboardBuilder()
+    for number, name in CHANGE_TYPES.items():
+        marker = analysis.best_for_type(number).marker
+        builder.button(text=f"{marker} {number} · {name}", callback_data=f"mt:{number}")
+    builder.button(text="← Назад к вариантам", callback_data="man:back")
+    builder.adjust(2, 2, 2, 1)
+    return builder.as_markup()
+
+
+def manual_kinds(analysis: Analysis, change_type: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for kind, name in CHANGE_KINDS.items():
+        marker = analysis.best_for_kind(change_type, kind).marker
+        builder.button(
+            text=f"{marker} {kind} · {name.capitalize()}",
+            callback_data=f"mk:{change_type}:{kind}",
+        )
+    builder.button(text="← Назад", callback_data="man:types")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def manual_causes(analysis: Analysis, change_type: int, change_kind: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for letter, name in CAUSES.items():
+        marker = analysis.verdict(change_type, change_kind, letter).verdict.marker
+        builder.button(
+            text=f"{marker} {letter} · {name}",
+            callback_data=f"mc:{change_type}:{change_kind}:{letter}",
+        )
+    builder.button(text="← Назад", callback_data=f"mk:back:{change_type}")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def contradiction(change_type: int, change_kind: str, cause_1: str) -> InlineKeyboardMarkup:
+    """Three ways forward. The third is the one that teaches something."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Выбрать другой код", callback_data="man:types")
+    builder.button(text="Переписать Ожидание", callback_data="sit:again")
+    builder.button(
+        text="Сгенерировать всё равно",
+        callback_data=f"force:{change_type}:{change_kind}:{cause_1}",
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def conditional(change_type: int, change_kind: str, cause_1: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="Принять допущение",
+        callback_data=f"accept:{change_type}:{change_kind}:{cause_1}",
+    )
+    builder.button(text="← Выбрать другое", callback_data="man:types")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def situation_cause_2(change_type: int, change_kind: str, cause_1: str) -> InlineKeyboardMarkup:
+    """The Revelation cause. Unconstrained — only the paradox changes."""
+    builder = InlineKeyboardBuilder()
+    for letter, name in CAUSES.items():
+        verdict = classify_paradox(change_kind, cause_1, letter)
+        builder.button(
+            text=f"{letter} · {name} — {texts.PARADOX_HINT[verdict]}",
+            callback_data=f"sc2:{change_type}:{change_kind}:{cause_1}:{letter}",
+        )
+    builder.adjust(1)
+    return builder.as_markup()

@@ -25,7 +25,7 @@ from core.prompt.builder import PromptBuilder
 from core.prompt.slice import UserInput
 from core.quota import Mode, Verdict, local_today, spend
 from core.service import GenerationService, QuotaExceeded
-from db.models import ApiCall, Generation, User
+from db.models import ApiCall, DailyUsage, Generation, User
 from db.session import create_all, make_engine, make_session_factory
 
 # --------------------------------------------------------------------------- #
@@ -396,3 +396,156 @@ async def test_an_unknown_user_is_an_error_not_a_silent_generation(
     service = build_service(sessions)
     with pytest.raises(LookupError, match="no user"):
         await service.generate(9999, Formula.parse("1е-ФД"))
+
+
+# --------------------------------------------------------------------------- #
+# Mode 2 — analysis
+# --------------------------------------------------------------------------- #
+
+
+def analysis_payload() -> str:
+    import json
+
+    from core.formula import CAUSES, CHANGE_KINDS, CHANGE_TYPES
+
+    rows = [
+        {
+            "change_type": n,
+            "change_kind": k,
+            "cause_1": c,
+            "verdict": "ok" if (n, k, c) == (1, "е", "Ф") else "contradiction",
+        }
+        for n in CHANGE_TYPES
+        for k in CHANGE_KINDS
+        for c in CAUSES
+    ]
+    return json.dumps(
+        {
+            "classifiable": True,
+            "top_readings": [
+                {
+                    "change_type": 1,
+                    "change_kind": "е",
+                    "cause_1": "Ф",
+                    "justification": "природный процесс",
+                }
+            ],
+            "compatibility": rows,
+        },
+        ensure_ascii=False,
+    )
+
+
+class AnalysisMessages(StubMessages):
+    """Adds the non-streaming `create` the analysis call uses."""
+
+    async def create(self, **kwargs: Any) -> Any:
+        self.calls.append(kwargs)
+        item = self.script[min(len(self.calls) - 1, len(self.script) - 1)]
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+async def test_an_analysis_is_charged_to_its_own_allowance(
+    sessions: async_sessionmaker[Session], user_id: int
+) -> None:
+    """It costs the owner money but produces no twist, so it must not eat a
+    generation."""
+    messages = AnalysisMessages(script=[StubMessage(content=[StubBlock(text=analysis_payload())])])
+    service = build_service(sessions, messages)
+
+    analysis = await service.analyse_situation(user_id, "Деревня пустеет.")
+    assert analysis.classifiable
+
+    async with sessions() as session:
+        call = await session.scalar(select(ApiCall).where(ApiCall.purpose == "analysis"))
+        assert call is not None
+        assert call.generation_id is None
+        assert call.cost_usd > 0
+        # The generation allowance is untouched.
+        usage = await session.scalar(select(DailyUsage))
+        assert usage is not None
+        assert usage.analyses == 1
+        assert usage.formula_gens == 0
+        assert usage.expectation_gens == 0
+
+
+async def test_the_analysis_allowance_runs_out(
+    sessions: async_sessionmaker[Session], user_id: int
+) -> None:
+    messages = AnalysisMessages(script=[StubMessage(content=[StubBlock(text=analysis_payload())])])
+    service = build_service(sessions, messages, free_analyses_per_day=1)
+
+    await service.analyse_situation(user_id, "Деревня пустеет.")
+    with pytest.raises(QuotaExceeded):
+        await service.analyse_situation(user_id, "Река обмелела.")
+
+
+async def test_a_failed_analysis_does_not_consume_the_allowance(
+    sessions: async_sessionmaker[Session], user_id: int
+) -> None:
+    class RateLimitError(Exception):
+        pass
+
+    service = build_service(sessions, AnalysisMessages(script=[RateLimitError("429")]))
+    with pytest.raises(ClaudeError):
+        await service.analyse_situation(user_id, "Деревня пустеет.")
+
+    async with sessions() as session:
+        usage = await session.scalar(select(DailyUsage))
+        assert usage is None or usage.analyses == 0
+        call = await session.scalar(select(ApiCall))
+        assert call is not None
+        assert call.purpose == "analysis"
+        assert call.error is not None
+
+
+async def test_a_forced_contradiction_is_recorded_as_one(
+    sessions: async_sessionmaker[Session], user_id: int
+) -> None:
+    """The user chose a code their own text contradicts; the record has to say
+    so, and the prompt has to carry the instruction to adapt."""
+    messages = StubMessages()
+    service = build_service(sessions, messages)
+
+    result = await service.generate(
+        user_id,
+        Formula.parse("1е-ФД"),
+        mode=Mode.EXPECTATION,
+        user_input=UserInput(situation="Деревня пустеет."),
+        adapt_expectation=True,
+    )
+
+    sent = messages.calls[0]["messages"][0]["content"]
+    assert "Перепиши его Ожидание" in sent
+    assert "минимально" in sent
+
+    async with sessions() as session:
+        stored = await session.get(Generation, result.generation_id)
+        assert stored is not None
+        assert stored.expectation_adapted is True
+        assert stored.override_verdict == "contradiction"
+
+
+async def test_an_accepted_condition_is_recorded_and_stated(
+    sessions: async_sessionmaker[Session], user_id: int
+) -> None:
+    messages = StubMessages()
+    service = build_service(sessions, messages)
+
+    result = await service.generate(
+        user_id,
+        Formula.parse("1е-ФД"),
+        mode=Mode.EXPECTATION,
+        user_input=UserInput(
+            situation="Река обмелела.", condition="если считать реку живым существом"
+        ),
+    )
+
+    assert "если считать реку живым существом" in messages.calls[0]["messages"][0]["content"]
+    async with sessions() as session:
+        stored = await session.get(Generation, result.generation_id)
+        assert stored is not None
+        assert stored.override_verdict == "conditional"
+        assert stored.expectation_adapted is False

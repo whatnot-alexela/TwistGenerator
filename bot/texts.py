@@ -185,6 +185,40 @@ def formula_card(formula: Formula, catalogue: Slice) -> str:
     return "\n".join(parts)
 
 
+def readings_block(options: Any) -> str:
+    """The one or two readings, each with the reasoning behind it."""
+    lines: list[str] = []
+    for index, reading in enumerate(options, start=1):
+        lines += [
+            f"<b>Вариант {index} — {reading.prefix}[?]</b>",
+            reading.describe().capitalize() + ".",
+            f"<i>{reading.justification}</i>",
+            "",
+        ]
+    return "\n".join(lines).strip()
+
+
+def contradiction_note(change_type: int, change_kind: str, cause_1: str) -> str:
+    """Why this reading is wrong — stated as the methodology's rule, not as a
+    flat refusal."""
+    kind = CHANGE_KINDS[change_kind]
+    return (
+        f"Вы выбрали {kind} изменение «{CHANGE_TYPES[change_type]}» "
+        f"с {CAUSES[cause_1]} причиной в Ожидании. "
+        "По Методике вид изменения определяется тем, как ситуация выглядит "
+        "до поворота, а ваше описание этого прочтения не подтверждает."
+    )
+
+
+def adapted_notice(original: str) -> str:
+    return (
+        "\n\n———\n"
+        "⚠️ <b>Ожидание переписано под выбранный код.</b>\n"
+        "Ваш исходный текст был таким:\n\n"
+        f"<i>{original}</i>"
+    )
+
+
 def limits(free_formula: int, free_expectation: int, paid: int) -> str:
     return (
         "<b>Осталось на сегодня</b>\n\n"
@@ -194,6 +228,57 @@ def limits(free_formula: int, free_expectation: int, paid: int) -> str:
         "Бесплатные обновляются в полночь по Москве."
     )
 
+
+ASK_SITUATION: Final[str] = (
+    "Опишите исходную ситуацию — то, как всё выглядит <b>до</b> поворота.\n\n"
+    "Это ваше Ожидание: что происходит и как это понимают персонажи. "
+    "Не больше 500 символов.\n\n"
+    "<i>Например: «Деревня пустеет — молодёжь каждый год уезжает в город, "
+    "старики остаются доживать».</i>"
+)
+
+ANALYSING: Final[str] = "Читаю ситуацию по Методике. Это быстро."
+
+READINGS_INTRO: Final[str] = (
+    "<b>Вот как эта ситуация читается по Методике.</b>\n\n"
+    "Левая половина формулы — тип изменения, вид и причина в Ожидании — "
+    "задана вашим текстом, а не выбором. Правую половину, то есть Откровение, "
+    "вы выберете сами: там свободны все четыре причины."
+)
+
+UNCLASSIFIABLE: Final[str] = (
+    "Из описания пока не складывается формула. Не хватает вот чего:\n\n"
+    "{missing}\n\n"
+    "Допишите — и попробуем снова. Эта попытка не засчитана."
+)
+
+MANUAL_INTRO: Final[str] = (
+    "Выбирайте сами. Рядом с каждым вариантом — насколько он согласуется "
+    "с вашим текстом:\n\n"
+    "✅ подтверждается текстом\n"
+    "⚠️ возможно при допущении\n"
+    "❌ противоречит тексту\n\n"
+    "Считается по вашему же описанию, обращений к модели больше нет."
+)
+
+CHOOSE_SITUATION_CAUSE_2: Final[str] = (
+    "Что раскроется на самом деле?\n\n"
+    "Здесь ограничений нет — любая из четырёх причин даёт рабочий твист, "
+    "меняется только парадокс."
+)
+
+CONTRADICTION: Final[str] = (
+    "❌ <b>Этот код противоречит вашему тексту.</b>\n\n"
+    "{explanation}\n\n"
+    "Формулу на текст натянуть нельзя. Но текст под формулу — можно: "
+    "если выбрать «Сгенерировать всё равно», Ожидание будет минимально "
+    "переписано, и бот покажет, что именно изменил."
+)
+
+CONDITIONAL: Final[str] = (
+    "⚠️ <b>Возможно, но при допущении:</b>\n\n<i>{condition}</i>\n\n"
+    "Если принять его за верное — генерируем."
+)
 
 EXPORT_EMPTY: Final[str] = "Выгружать пока нечего — ни одной генерации."
 

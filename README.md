@@ -8,8 +8,8 @@ Bot: [@twist_generator](https://t.me/twist_generator) · Methodology: https://ki
 ## Status
 
 Milestones 1–3 complete: the methodology is data, the prompt assembles behind a
-profile switch, and the bot generates, stores and rates twists in Mode 1.
-Mode 2 (start from a described situation) and payments are not built yet.
+profile switch, and the bot generates, stores and rates twists in both modes.
+Mode 2 (start from a described situation) works too. Payments are not built yet.
 
 - **[docs/SPEC.md](docs/SPEC.md)** — full technical specification
 - **[CLAUDE.md](CLAUDE.md)** — working notes, starting with what things cost

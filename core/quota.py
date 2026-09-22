@@ -176,6 +176,59 @@ async def check(
     return Decision(Verdict.DENIED_DAILY_LIMIT, units, paid_left=user.paid_units)
 
 
+async def check_analysis(
+    session: AsyncSession,
+    user: User,
+    settings: Settings,
+    now: datetime | None = None,
+) -> Decision:
+    """May this user analyse a situation?
+
+    An analysis costs the owner roughly a third of a generation but produces no
+    twist, so it has its own small daily allowance and never consumes one of the
+    generation allowances. It is capped rather than free-for-all because a user
+    who cannot be bothered to describe a situation properly could otherwise
+    re-run the classifier indefinitely.
+    """
+    day = local_today(now)
+
+    if user.is_blocked:
+        return Decision(Verdict.DENIED_BLOCKED, units=0)
+
+    free_month, paid_month = await month_spend(session, day)
+    if free_month + paid_month >= settings.emergency_stop_usd:
+        return Decision(Verdict.DENIED_EMERGENCY, units=0)
+
+    usage = await _usage_row(session, user.id, day)
+    left = max(settings.free_analyses_per_day - usage.analyses, 0)
+
+    if user.is_owner:
+        return Decision(Verdict.FREE, units=0, free_left=left)
+    if left <= 0:
+        return Decision(Verdict.DENIED_DAILY_LIMIT, units=0)
+    if await spend(session, day) >= settings.daily_free_budget_usd:
+        return Decision(Verdict.DENIED_BUDGET, units=0, free_left=left)
+    if free_month >= settings.monthly_free_budget_usd:
+        return Decision(Verdict.DENIED_BUDGET, units=0, free_left=left)
+
+    return Decision(Verdict.FREE, units=0, free_left=left - 1)
+
+
+async def charge_analysis(
+    session: AsyncSession,
+    user: User,
+    cost: Decimal,
+    now: datetime | None = None,
+) -> None:
+    """Record a completed analysis: one against the daily count, its cost in
+    the ledger. Never touches the generation allowances."""
+    day = local_today(now)
+    usage = await _usage_row(session, user.id, day)
+    usage.analyses += 1
+    ledger = await _ledger_row(session, day)
+    ledger.free_spend_usd += cost
+
+
 async def charge(
     session: AsyncSession,
     user: User,

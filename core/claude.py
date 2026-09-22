@@ -80,6 +80,8 @@ class MessagesClient(Protocol):
 
     async def stream(self, **kwargs: Any) -> Any: ...
 
+    async def create(self, **kwargs: Any) -> Any: ...
+
 
 @dataclass
 class ClaudeClient:

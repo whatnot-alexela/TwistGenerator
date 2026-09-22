@@ -23,5 +23,20 @@ class Formula(StatesGroup):
     awaiting_setting = State()
 
 
+class Situation(StatesGroup):
+    """Mode 2 — the user describes a situation first."""
+
+    describing = State()
+    readings = State()
+    manual_type = State()
+    manual_kind = State()
+    manual_cause = State()
+    cause_2 = State()
+    options = State()
+
+    awaiting_genre = State()
+    awaiting_characters = State()
+
+
 class Feedback(StatesGroup):
     awaiting_comment = State()
