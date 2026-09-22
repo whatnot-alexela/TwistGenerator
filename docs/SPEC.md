@@ -246,6 +246,27 @@ breakdown, which the author withdrew because the twist carries a paradox the
 breakdown does not describe. The importer lists each of these on every run, so
 a skipped section is visibly skipped rather than quietly missing.
 
+### 3.8 Source corrections
+
+The FB2 source carries damage of its own, present in the XML rather than
+introduced by the import: bullet lists collapsed into a single run of text, so
+the last word of one item is welded to the first of the next
+(`пространствоПонижает`), and words that lost a character or gained a stray
+space (`корпор ции`, `Кажд ерть`, `измененияобщественных`).
+
+`methodology/corrections.yaml` lists every repair with a reason, and
+`scripts/import_fb2.py` applies them to each paragraph as it is extracted —
+before anything is written out. Unlike redactions (§4.2.1), corrections restore
+what the author wrote rather than remove anything, and they are applied at
+import rather than at prompt assembly: the example text is shown to users in the
+formula card, so the committed data has to be clean, not only the prompt.
+
+Every correction must match **exactly once** across the corpus. Zero matches or
+more than one fails the import: a correction that has silently stopped applying
+is worse than no correction at all. Currently 17 corrections.
+
+---
+
 ### 4.2.1 Redactions
 
 The importer keeps the methodology verbatim. Every departure from the author's

@@ -1,0 +1,103 @@
+# Repairs to damage in the FB2 source, applied by scripts/import_fb2.py before
+# anything is written out. Unlike redactions.yaml, these restore what the author
+# wrote rather than remove anything — so the committed data is repaired, and the
+# examples users see in a formula card are clean, not just the prompt.
+#
+# Two kinds of damage, both present in the source XML itself rather than
+# introduced by the import:
+#
+#   * bullet lists collapsed into a single run of text, so the last word of one
+#     item is welded to the first word of the next ("пространствоПонижает");
+#   * words that lost a character or gained a stray space ("корпор ции").
+#
+# Every entry must match exactly once across the whole corpus. Zero matches or
+# more than one fails the import: a correction that has silently stopped
+# applying is worse than no correction at all.
+
+# --------------------------------------------------------------------------- #
+# §8 — two list items welded together
+# --------------------------------------------------------------------------- #
+
+- find: "(Конечная) в ОжиданииФормулы искусственных"
+  replace: "(Конечная) в Ожидании. Формулы искусственных"
+  reason: two list items run together
+
+- find: "форма и цель слитыИскусственные изменения"
+  replace: "форма и цель слиты. Искусственные изменения"
+  reason: two list items run together
+
+# --------------------------------------------------------------------------- #
+# §9 — the two four-item lists describing each transformation
+# --------------------------------------------------------------------------- #
+
+- find: "разделяются)Вводит"
+  replace: "разделяются). Вводит"
+  reason: list item boundary lost after a closing bracket
+
+- find: "моральное пространствоПонижает"
+  replace: "моральное пространство. Понижает"
+  reason: list item boundary lost
+
+- find: "(субстанция → артефакт)Открывает"
+  replace: "(субстанция → артефакт). Открывает"
+  reason: list item boundary lost after a closing bracket
+
+- find: "(необходимость → случайность)Эффект"
+  replace: "(необходимость → случайность). Эффект"
+  reason: list item boundary lost after a closing bracket
+
+- find: "сходятся)Раскрывает"
+  replace: "сходятся). Раскрывает"
+  reason: list item boundary lost after a closing bracket
+
+- find: "морального пространстваПовышает"
+  replace: "морального пространства. Повышает"
+  reason: list item boundary lost
+
+- find: "трагическими импликациямиЗакрывает"
+  replace: "трагическими импликациями. Закрывает"
+  reason: list item boundary lost
+
+- find: "(случайность → необходимость)Эффект"
+  replace: "(случайность → необходимость). Эффект"
+  reason: list item boundary lost after a closing bracket
+
+# --------------------------------------------------------------------------- #
+# §2 — a heading welded to the sentence before it
+# --------------------------------------------------------------------------- #
+
+- find: "«Зачем это сделано?»Для сценариста"
+  replace: "«Зачем это сделано?» Для сценариста"
+  reason: inline heading run together with the preceding sentence
+
+# --------------------------------------------------------------------------- #
+# Appendix 7 — three list items welded together
+# --------------------------------------------------------------------------- #
+
+- find: "специфические формыЭнтелехия"
+  replace: "специфические формы. Энтелехия"
+  reason: list item boundary lost
+
+- find: "разделяются в артефактахАктивная"
+  replace: "разделяются в артефактах. Активная"
+  reason: list item boundary lost
+
+# --------------------------------------------------------------------------- #
+# Appendix 6.2 — damaged words in the example catalogue
+# --------------------------------------------------------------------------- #
+
+- find: "устаревания правовых норм и измененияобщественных условий"
+  replace: "устаревания правовых норм и изменения общественных условий"
+  reason: missing space
+
+- find: "монополию одной корпор ции"
+  replace: "монополию одной корпорации"
+  reason: dropped letter and a stray space
+
+- find: "чтобы имитироватьрезонансный эффект"
+  replace: "чтобы имитировать резонансный эффект"
+  reason: missing space
+
+- find: "Кажд ерть соответствует строке считалки"
+  replace: "Каждая смерть соответствует строке считалки"
+  reason: dropped letters and a stray space

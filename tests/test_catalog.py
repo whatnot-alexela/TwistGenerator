@@ -207,3 +207,32 @@ def test_duplicate_formula_across_files_is_fatal(tmp_path: Path) -> None:
     (tmp_path / "b.yaml").write_text(body, encoding="utf-8")
     with pytest.raises(CatalogError, match="duplicate formula"):
         Catalog.load(tmp_path)
+
+
+# --------------------------------------------------------------------------- #
+# Source damage repaired at import (methodology/corrections.yaml)
+# --------------------------------------------------------------------------- #
+
+
+def test_damaged_words_are_repaired_in_the_catalogue(catalog: Catalog) -> None:
+    """The FB2 source has words with a dropped letter or a missing space. Users
+    read this text in the formula card, so it must arrive repaired."""
+    entry = catalog.get("6и-ФК")
+    assert entry is not None
+    example = " ".join(e.expectation + e.revelation for e in entry.examples)
+    assert "изменения общественных" in example
+    assert "корпорации" in example
+    assert "измененияобщественных" not in example
+    assert "корпор ции" not in example
+
+
+def test_no_damaged_word_survives_anywhere(catalog: Catalog) -> None:
+    for code in ("1е-ФД", "6и-ФД", "6и-ФК"):
+        entry = catalog.get(code)
+        assert entry is not None
+        blob = " ".join(
+            [e.expectation + e.revelation for e in entry.examples]
+            + [r.analysis + (r.note or "") for r in entry.references]
+        )
+        for damage in ("Кажд ерть", "имитироватьрезонансный", "корпор ции"):
+            assert damage not in blob, f"{code}: {damage}"

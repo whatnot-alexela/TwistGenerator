@@ -29,6 +29,8 @@ from pathlib import Path
 from typing import Final
 from xml.etree import ElementTree
 
+import yaml
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.formula import (  # noqa: E402
@@ -96,6 +98,41 @@ def squash(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+@dataclass
+class Correction:
+    """A repair to damage in the source: see methodology/corrections.yaml."""
+
+    find: str
+    replace: str
+    reason: str
+    applied: int = 0
+
+
+def load_corrections(path: Path) -> list[Correction]:
+    if not path.exists():
+        return []
+    document = yaml.safe_load(path.read_text(encoding="utf-8")) or []
+    corrections: list[Correction] = []
+    for index, item in enumerate(document):
+        for key in ("find", "replace", "reason"):
+            if key not in item:
+                raise SystemExit(f"{path.name}[{index}]: missing required key {key!r}")
+        corrections.append(
+            Correction(find=item["find"], replace=item["replace"], reason=item["reason"])
+        )
+    return corrections
+
+
+def apply_corrections(text: str, corrections: list[Correction]) -> str:
+    """Repair one paragraph, counting how often each correction fires."""
+    for correction in corrections:
+        hits = text.count(correction.find)
+        if hits:
+            correction.applied += hits
+            text = text.replace(correction.find, correction.replace)
+    return text
+
+
 # --------------------------------------------------------------------------- #
 # Parsing
 # --------------------------------------------------------------------------- #
@@ -138,8 +175,16 @@ class CatalogueEntry:
     references: list[Reference] = field(default_factory=list)
 
 
-def read_sections(source: Path) -> tuple[list[Section], dict[str, bytes]]:
-    """Return the book's sections in order, plus its embedded images."""
+def read_sections(
+    source: Path, corrections: list[Correction] | None = None
+) -> tuple[list[Section], dict[str, bytes]]:
+    """Return the book's sections in order, plus its embedded images.
+
+    Corrections are applied here, to every paragraph as it is extracted, so that
+    everything written downstream — prompt blocks and the example catalogue
+    alike — is already repaired.
+    """
+    corrections = corrections or []
     raw = source.read_text(encoding="utf-8-sig")
 
     images: dict[str, bytes] = {}
@@ -162,7 +207,7 @@ def read_sections(source: Path) -> tuple[list[Section], dict[str, bytes]]:
             # A <p> inside the title element is the title itself, not content.
             if paragraph in list(title_node.iter(f"{FB2_NS}p")):
                 continue
-            text = squash("".join(paragraph.itertext()))
+            text = apply_corrections(squash("".join(paragraph.itertext())), corrections)
             if text:
                 section.paragraphs.append(text)
         sections.append(section)
@@ -330,7 +375,8 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=Path("methodology"))
     args = parser.parse_args()
 
-    sections, images = read_sections(args.source)
+    corrections = load_corrections(args.out / "corrections.yaml")
+    sections, images = read_sections(args.source, corrections)
     for directory in ("core", "examples", "images"):
         (args.out / directory).mkdir(parents=True, exist_ok=True)
 
@@ -358,6 +404,18 @@ def main() -> int:
     # ---- coverage report -------------------------------------------------- #
     print(f"Source: {args.source}")
     print(f"Sections: {len(sections)}   Images: {len(images)}\n")
+
+    misfired = [c for c in corrections if c.applied != 1]
+    if misfired:
+        print("Corrections that did not apply exactly once:")
+        for correction in misfired:
+            print(f"  {correction.applied}x  {correction.find[:70]}")
+        raise SystemExit(
+            "\nEvery correction must match exactly once. A correction that no longer\n"
+            "fires has silently stopped repairing the source; one that fires twice is\n"
+            "not specific enough. Fix methodology/corrections.yaml."
+        )
+    print(f"Corrections applied: {len(corrections)}\n")
     print("\n".join(report))
 
     if unknown:

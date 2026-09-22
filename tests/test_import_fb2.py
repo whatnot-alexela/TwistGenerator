@@ -204,3 +204,49 @@ def test_real_source_parses_into_the_committed_numbers() -> None:
             references += sum(len(entry.references) for entry in entries)
 
     assert (catalogued, examples, references) == (24, 29, 20)
+
+
+# --------------------------------------------------------------------------- #
+# Source corrections
+# --------------------------------------------------------------------------- #
+
+CORRECTIONS = ROOT / "methodology" / "corrections.yaml"
+
+
+def test_corrections_load() -> None:
+    corrections = fb2.load_corrections(CORRECTIONS)
+    assert corrections
+    for correction in corrections:
+        assert correction.find and correction.replace and correction.reason
+        assert correction.find != correction.replace
+
+
+def test_every_correction_fires_exactly_once_on_the_real_source() -> None:
+    """The invariant the importer enforces: a correction that stopped matching
+    has silently stopped repairing the source."""
+    corrections = fb2.load_corrections(CORRECTIONS)
+    fb2.read_sections(ROOT / "methodology" / "source" / "twist_generator_v1.fb2", corrections)
+    for correction in corrections:
+        assert correction.applied == 1, f"{correction.find[:60]} fired {correction.applied}x"
+
+
+def test_apply_corrections_counts_hits() -> None:
+    correction = fb2.Correction(find="корпор ции", replace="корпорации", reason="test")
+    assert fb2.apply_corrections("одной корпор ции", [correction]) == "одной корпорации"
+    assert correction.applied == 1
+
+
+def test_a_correction_that_does_not_match_stays_at_zero() -> None:
+    correction = fb2.Correction(find="нет такого", replace="x", reason="test")
+    assert fb2.apply_corrections("другой текст", [correction]) == "другой текст"
+    assert correction.applied == 0
+
+
+def test_missing_key_in_corrections_is_fatal(tmp_path: Path) -> None:
+    (tmp_path / "corrections.yaml").write_text("- find: a\n  replace: b\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="missing required key 'reason'"):
+        fb2.load_corrections(tmp_path / "corrections.yaml")
+
+
+def test_no_corrections_file_is_not_an_error(tmp_path: Path) -> None:
+    assert fb2.load_corrections(tmp_path / "nothing.yaml") == []
