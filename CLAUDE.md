@@ -4,8 +4,10 @@ Telegram bot generating plot twists strictly by the **Twist Generator 1.0**
 methodology — 192 formulas from Aristotle's four causes and six types of change.
 The author of the methodology is the owner of this repository.
 
-Full design: **docs/SPEC.md**. Read §3.4, §4.2 and §7 before touching the
+Full design: **docs/SPEC.md**. Read it before touching the
 methodology, the prompt or anything that costs money.
+
+Keep your replies extremely concise and focus on conveying the key information. No unnecessary fluff, no long code snippets.
 
 ## Money — read this first
 
