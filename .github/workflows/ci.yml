@@ -16,7 +16,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install tooling
-        run: pip install pytest pytest-asyncio pyyaml ruff mypy
+        run: pip install pytest pytest-asyncio pyyaml ruff mypy "sqlalchemy[asyncio]" aiosqlite
 
       - name: Lint
         run: ruff check .
@@ -25,7 +25,7 @@ jobs:
         run: ruff format --check .
 
       - name: Types
-        run: mypy core scripts bot
+        run: mypy core scripts bot db
 
       - name: Tests
         run: pytest -q
