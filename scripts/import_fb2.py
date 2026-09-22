@@ -46,15 +46,16 @@ FB2_NS: Final[str] = "{http://www.gribuser.ru/xml/fictionbook/2.0}"
 CORE_SECTIONS: Final[dict[str, str]] = {
     "Часть 1. Философский инструментарий": "a02_six_arenas.md",
     "2. Четыре причины": "a03_four_causes.md",
-    "4. Естественные и искусственные изменения": "a04_natural_artificial.md",
-    "Часть 2. Анатомия сюжетного твиста": "a05_expectation_revelation.md",
-    "6. Структура и содержание формулы твиста": "a06_formula_structure.md",
-    "8. Парадокс №1": "a10_paradox_rules.part1.md",
-    "9. Парадокс №2": "a10_paradox_rules.part2.md",
-    "10. Различие в механике твистов": "a11_paradox_mechanics.source.md",
-    "11. Формулы с совмещенными парадоксами": "a10_paradox_rules.part3.md",
-    "Приложение 6": "b05_appendix6.source.md",
-    "Приложение 7": "b05_appendix7.source.md",
+    "3. Двигатель изменений": "a04_triad.md",
+    "4. Естественные и искусственные изменения": "a05_natural_artificial.md",
+    "Часть 2. Анатомия сюжетного твиста": "a06_expectation_revelation.md",
+    "6. Структура и содержание формулы твиста": "a07_formula_structure.md",
+    "8. Парадокс №1": "a08_paradox_rules.part1.md",
+    "9. Парадокс №2": "a08_paradox_rules.part2.md",
+    "11. Формулы с совмещенными парадоксами": "a08_paradox_rules.part3.md",
+    "10. Различие в механике твистов": "a09_paradox_mechanics.md",
+    "Приложение 6": "b01_appendix6.md",
+    "Приложение 7": "b02_appendix7.md",
 }
 
 #: Sections deliberately left out of the prompt. Recorded so the coverage report
@@ -63,7 +64,6 @@ EXCLUDED_SECTIONS: Final[dict[str, str]] = {
     "От автора": "author's preface, not methodology",
     "Как читать эту книгу": "reading guide, not methodology",
     "Введение": "motivational introduction",
-    "3. Двигатель изменений": "the triad is only marginally used in v1.0",
     "Часть 3. Матрица генерации твистов. 7.": "superseded by the computed rule",
     "Заключение": "closing remarks",
     "Фильм «Я — Легенда»": "removed by the author: the twist has a paradox the breakdown omits",

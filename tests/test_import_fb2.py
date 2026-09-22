@@ -167,7 +167,7 @@ def test_malformed_formula_code_is_skipped_not_fatal() -> None:
     ("title", "expected"),
     [
         ("2. Четыре причины: «Почему» происходит в истории", "a03_four_causes.md"),
-        ("Приложение 6. Твисты с парадоксом", "b05_appendix6.source.md"),
+        ("Приложение 6. Твисты с парадоксом", "b01_appendix6.md"),
         ("Никому не известный раздел", None),
     ],
 )
@@ -178,7 +178,14 @@ def test_core_section_routing(title: str, expected: str | None) -> None:
 def test_excluded_sections_are_recognised_on_purpose() -> None:
     """Skipped sections must be listed, not silently dropped as unrecognised."""
     assert fb2.matches("От автора", fb2.EXCLUDED_SECTIONS) is not None
-    assert fb2.matches("3. Двигатель изменений: триада", fb2.EXCLUDED_SECTIONS) is not None
+    assert fb2.matches("Заключение: философия", fb2.EXCLUDED_SECTIONS) is not None
+
+
+def test_the_triad_is_imported_not_excluded() -> None:
+    """§3 was excluded at first, then restored on the author's instruction."""
+    title = "3. Двигатель изменений: триада «Необходимое – Возможное – Актуальное»"
+    assert fb2.matches(title, fb2.CORE_SECTIONS) == "a04_triad.md"
+    assert fb2.matches(title, fb2.EXCLUDED_SECTIONS) is None
 
 
 def test_real_source_parses_into_the_committed_numbers() -> None:

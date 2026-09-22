@@ -1,0 +1,43 @@
+# Redactions applied to the imported core blocks before they enter a prompt.
+#
+# The importer keeps the methodology verbatim, so every departure from the
+# author's text lives here, in one reviewable file. Deleting an entry restores
+# the original wording on the next build — nothing is edited in place.
+#
+# Each entry must match exactly once in its block. If the source text changes
+# and a redaction stops matching, the build fails loudly rather than silently
+# dropping the redaction (core/prompt/redaction.py).
+#
+# Scope, as instructed by the author: remove passages where he questions his own
+# system. Fed to the model, they make it hedge and qualify where it should be
+# constructing a twist. Facts stay; only the doubt about them goes.
+
+- block: a02_six_arenas
+  reason: >-
+    The author wonders aloud whether an AI hallucinated the substantial-change
+    category. The preceding sentences already say the guide works with six
+    categories, which is the operative fact.
+  action: remove
+  text: >-
+    Возможно, в силу галлюцинации ИИ, был выделен этот тип изменений, так же,
+    как и сгенерированные в соответствии с ним восемь примеров таких твистов.
+    Эти твисты не включены в матрицу и вынесены в отдельное приложение №2 и
+    требуют дополнительного изучения и прежде всего уяснения, имеет ли данный
+    тип изменения основу в источнике.
+
+- block: a07_formula_structure
+  reason: >-
+    The count is real and needed — Growth and Decline are not split, so the
+    category holds 40 formulas rather than 48. Only the attribution to an AI
+    hallucination is a hedge, so this is a rewrite rather than a deletion.
+  action: replace
+  text: >-
+    Возможно, в силу галлюцинаций ИИ, в данной категории твистов изменения
+    Роста и Убыли не разделены на отдельные типы и представлены вместо
+    шестнадцати формул только восемью, поэтому в данной версии 1.0. генератора
+    рассматриваются 40 твистов данной категории.
+  with: >-
+    В данной категории твистов изменения Роста и Убыли не разделены на
+    отдельные типы и представлены вместо шестнадцати формул только восемью,
+    поэтому в версии 1.0 генератора рассматриваются 40 твистов данной
+    категории.

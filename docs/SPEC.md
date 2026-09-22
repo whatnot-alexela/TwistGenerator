@@ -198,35 +198,71 @@ Three blocks, assembled per request. Block A is constant across every request; B
 
 ### 4.1 Budget
 
-| Block | Content | ~tokens |
-|---|---|---|
-| A | Methodology core | 11 000 – 12 000 |
-| B | Formula-specific slice | 1 500 – 3 000 |
-| C | User input | ≤ 200 |
-| **Total input** | | **13 000 – 16 000** |
+Measured from the assembled blocks (`PromptBuilder.report()`), not estimated.
+
+| Profile | Core | + Appendix (paradox №1) | + Appendix (paradox №2) | + both |
+|---|---|---|---|---|
+| `full` | 17 200 | 20 900 | 26 400 | 29 700 |
+| `condensed` | 15 800 | 17 300 | 17 200 | 18 400 |
+
+Plus the per-formula slice (~350 tokens) and user input (≤200).
+
+**Profiles.** `full` is the default, on the author's instruction: every operative
+section of the methodology at its full length. `condensed` replaces §10 and the
+two appendices with hand-written condensed variants. Both exist so the question
+"does condensing cost quality?" can be settled by running the same formulas
+through each, rather than by argument. See §12.4.
+
+The appendices are the reason the spread is so wide, and the reason they ride in
+the slice rather than the core: Appendix 7 alone is 8 800 tokens and is
+irrelevant to any formula without paradox №2.
 
 ### 4.2 Block A — methodology core (constant, system prompt)
 
-Files under `methodology/core/`, concatenated in this exact order. Each is a plain Markdown file so the author can edit wording without touching code.
+Assembled by `core/prompt/builder.py` from the manifest below, in this order.
+Each block concatenates one or more files under `methodology/`, so a section of
+the book and a table transcribed from one of its images arrive together.
 
-| Slug | Content | Source section | ~tok |
+| Block | Sources | Content | `full` |
 |---|---|---|---|
-| `a01_role.md` | System role: you work strictly within this methodology, you do not introduce narrative rules of your own, you never contradict the supplied formula | authored | 300 |
-| `a02_six_arenas.md` | Six arenas of change with the "инсайт для писателя" note for each | §1 | 1 750 |
-| `a03_four_causes.md` | The four Aristotelian causes + the causes table | §2 + `img2` | 1 370 |
-| `a04_natural_artificial.md` | Natural vs artificial + the comparison table + **the hard rule that the kind is fixed by the Expectation** | §4 + `img3` + §6.1 callout | 1 340 |
-| `a05_expectation_revelation.md` | The Expectation → Revelation dynamic | §5 | 1 020 |
-| `a06_formula_structure.md` | Formula structure + the 12 causal shifts table in "Думали, что… а оказалось…" form | §6.1–6.2 + `img5` | 1 200 |
-| `a07_complex_causality.md` | Complex causality in artificial changes (ship example, detective example) | §6.3 | 900 |
-| `a08_fk_kf_paradox.md` | The ФК/КФ difficulty in natural changes and its resolution via a hidden artificial Д | §6.4 | 800 |
-| `a09_content_shifts.md` | Content-shift twists ФФ/ММ/ДД/КК | §6.5 | 900 |
-| `a10_paradox_rules.md` | Paradox №1, №2 and combined — condensed to the operative rules | §8, §9, §11 | 1 200 |
-| `a11_paradox_mechanics.md` | Practical writing requirements per paradox class — condensed from 2 650 to ~600 tokens | §10 | 600 |
-| `a12_output_contract.md` | Output format: exactly 2 twists, Russian, structure `Ожидание / Откровение / Почему это работает по формуле`, no meta-commentary, no markdown headings | authored | 400 |
+| `a01_role` | authored | Work strictly inside the methodology; the formula is binding; the kind of change is read from the Expectation | 444 |
+| `a02_six_arenas` | §1 + `tables/change_codes.md` | The six arenas of change, the 12 change codes | 2 003 |
+| `a03_four_causes` | §2 + `tables/causes.md` | The four causes, their modes of being and forms of time | 1 837 |
+| `a04_triad` | §3 | The Necessary / Possible / Actual triad | 913 |
+| `a05_natural_artificial` | §4 + `tables/kinds.md` | Natural vs artificial, and the rule fixing the kind by the Expectation | 1 537 |
+| `a06_expectation_revelation` | §5 | The Expectation → Revelation dynamic | 987 |
+| `a07_formula_structure` | §6 + `tables/causal_shifts.md` | Formula structure, complex causality, the ФК/КФ difficulty, content shifts, the 12 causal shifts | 4 763 |
+| `a08_paradox_rules` | §8, §9, §11 | What the two paradoxes are and when they combine | 1 712 |
+| `a09_paradox_mechanics` | §10 | How the paradox classes differ and how to write each — **condensable** | 2 529 |
+| `a10_output_contract` | authored | Two twists, Russian, three parts each | 482 |
 
-**Explicitly excluded from Block A:** §3 (the Necessary–Possible–Actual triad — the author states it is only marginally used in v1.0), §7 (matrix explanation — superseded by §3.4 of this spec), "От автора", "Как читать эту книгу", "Введение", "Заключение", and the «Я — Легенда» breakdown (removed by the author: the twist contains a paradox that the breakdown does not describe, so it is not a valid reference analysis).
+`a04_triad` was excluded in the first draft of this spec and restored on the
+author's instruction: §3 is part of the methodology's machinery, not background.
 
-`a10` and `a11` are hand-condensed and carry `# frozen: true`.
+**Excluded from the prompt entirely:** «От автора», «Как читать эту книгу»,
+Введение, Заключение (address the reader, not the generator); §7, the matrix
+explanation (superseded by the computed rule of §3.4); and the «Я — Легенда»
+breakdown, which the author withdrew because the twist carries a paradox the
+breakdown does not describe. The importer lists each of these on every run, so
+a skipped section is visibly skipped rather than quietly missing.
+
+### 4.2.1 Redactions
+
+The importer keeps the methodology verbatim. Every departure from the author's
+own words lives in `methodology/redactions.yaml`, one entry per passage, each
+with a reason. Redactions apply under **both** profiles — they are not what the
+profiles differ by.
+
+Their scope, set by the author: remove the asides in which he questions his own
+system. Fed the author's uncertainty about whether a category is an artefact of
+an AI's hallucination, the model hedges where it should be constructing a
+twist. Facts survive; only the doubt about them goes. Where a hedge is welded to
+a useful fact, the entry is a rewrite rather than a deletion — the count of 40
+content-shift formulas stays, its attribution to a hallucination does not.
+
+A redaction that no longer matches its block, or matches more than once, is a
+fatal error at startup. Silently skipping it would mean shipping text the author
+asked to remove.
 
 ### 4.3 Block B — formula slice (variable)
 
@@ -506,9 +542,18 @@ All user-facing strings live in `bot/texts.py` as a single Russian copy deck. No
 
 | Action | Units | Cost to owner |
 |---|---|---|
-| Generation by formula (2 twists) | 1 | ~$0.15 |
-| Generation from Expectation (2 twists) | 2 | ~$0.25 |
+| Generation by formula (2 twists) | 1 | **~$0.25** |
+| Generation from Expectation (2 twists) | 2 | **~$0.35** |
 | Situation analysis | 0 | ~$0.07 |
+
+**Revised upward from the first draft's $0.15.** Two things moved: the core grew
+once §3 was restored and nothing was condensed, and the paradox appendices add
+3 300 to 12 200 tokens depending on the formula. Input is now $0.09–$0.15 per
+generation; the rest is output, where adaptive thinking on Opus 5 is the largest
+and least predictable term.
+
+These are estimates. Milestone 3 logs `usage` on every call, and §7.4 must be
+re-derived from that data before the bot opens to the public.
 
 ### 7.2 Free allowances, per user per day (UTC+3, reset at 00:00)
 
@@ -530,25 +575,38 @@ Worst case per user per day: ~$0.70. The owner's `user_id` is exempt from all us
 
 The daily cap smooths spikes; the monthly cap is the hard wall and binds first if every day runs hot. All three are configuration values, changeable without redeploy.
 
+At the revised $0.25 per unit, $100/month buys roughly **400 free generations**, or about 13 a day across all users — down from the 660 the first draft assumed.
+
 Caps are evaluated against **actual recorded USD spend** from `api_calls`, not against an estimate.
 
 ### 7.4 Payments — Telegram Stars
 
-Telegram pays the developer approximately **$0.013 per Star**. Break-even is **12 ⭐ per unit**; packs are priced at 13–15 ⭐ per unit.
+Telegram pays the developer approximately **$0.013 per Star**.
+
+At $0.25 per unit the break-even is **19 ⭐**, not the 12 ⭐ of the first draft.
+The pack prices below are set at 20–26 ⭐ per unit.
 
 | Pack | Price | User pays | Owner nets | Cost | Margin |
 |---|---|---|---|---|---|
-| 10 units | **150 ⭐** | ~$3 | $1.95 | $1.50 | +$0.45 (23%) |
-| 30 units | **420 ⭐** | ~$8.4 | $5.46 | $4.50 | +$0.96 (18%) |
-| 100 units | **1300 ⭐** | ~$26 | $16.90 | $15.00 | +$1.90 (11%) |
+| 10 units | **260 ⭐** | ~$5.2 | $3.38 | $2.50 | +$0.88 (35%) |
+| 30 units | **700 ⭐** | ~$14 | $9.10 | $7.50 | +$1.60 (21%) |
+| 100 units | **2100 ⭐** | ~$42 | $27.30 | $25.00 | +$2.30 (9%) |
 
-Prices are configuration values. **Do not price below 15 ⭐ per unit:** Opus 5 thinking length varies and one heavy generation absorbs the margin of three ordinary ones.
+Prices are configuration values. **Do not set a pack below 20 ⭐ per unit** —
+Opus 5's thinking length varies and one heavy generation absorbs the margin of
+several ordinary ones. Re-derive these from measured spend at milestone 3 before
+opening payments; the 100-unit pack in particular has almost no cushion.
 
-Implementation: `send_invoice` with `currency="XTR"`, `provider_token=""`, handlers for `pre_checkout_query` (always approve unless the pack id is unknown) and `successful_payment` (credit units atomically, store `telegram_payment_charge_id`).
+Implementation: `send_invoice` with `currency="XTR"`, `provider_token=""`,
+handlers for `pre_checkout_query` (approve unless the pack id is unknown) and
+`successful_payment` (credit units atomically, store
+`telegram_payment_charge_id`).
 
-Policy: **no refunds**, stated in `/buy` and in the offer text. `refundStarPayment` is available for exceptional manual intervention by the owner.
+Policy: **no refunds**, stated in `/buy` and in the offer text.
+`refundStarPayment` remains available for exceptional manual intervention.
 
-Operational note: Stars withdrawal requires a **1000 ⭐ minimum** and each Star is held **21 days** from receipt.
+Operational note: withdrawal requires a **1000 ⭐ minimum** and each Star is held
+**21 days** from receipt.
 
 ### 7.5 Anti-abuse
 
@@ -836,6 +894,23 @@ The only groups with complete appendices. Checklist, run against the real API:
 5. Mode 2 override: pick a ✅, a ⚠️ and a ❌ for the same situation; verify the ❌ path produces an adapted Expectation with an honest statement of the change.
 6. Cost check: 20 real generations, compare recorded spend against the $0.15 / $0.25 estimate and adjust §7 if reality differs.
 
+### 12.4 Profile comparison
+
+The `full` / `condensed` split exists to be measured, not argued about. Once
+generation works:
+
+1. Run the 12 `1е` formulas through both profiles, same seeds, same inputs.
+2. Present the 12 pairs to the author **blind** — neither side labelled.
+3. The author picks the better of each pair, or "no difference".
+
+24 generations, roughly **$5**. If `condensed` holds up, the default moves and
+every generation gets cheaper; if it does not, `full` stays and the condensed
+variants are deleted rather than left to rot.
+
+The condensed variants are the editor's reading of the author's text, not the
+author's own abridgement. They carry `needs_author_review: true` in their front
+matter until he has read them.
+
 **Acceptance for stage 1:** the author reviews 20 generations across both groups and confirms each one is a correct realisation of its formula and paradox class.
 
 ---
@@ -845,7 +920,7 @@ The only groups with complete appendices. Checklist, run against the real API:
 | # | Deliverable |
 |---|---|
 | 1 | FB2 import pipeline, table transcription, `examples/*.yaml` for `1е` and `6и`, formula and paradox modules with full unit tests |
-| 2 | Block A core files assembled and reviewed by the author — the quality gate for everything downstream |
+| 2 | Prompt core assembled behind a profile switch, redaction layer, condensed variants — reviewed by the author, the quality gate for everything downstream |
 | 3 | Mode 1 end to end with a real API call, database writes, rating |
 | 4 | Quotas, budget caps, cost logging, `/export` |
 | 5 | Mode 2: analysis call, compatibility map, override and contradiction handling |
@@ -865,6 +940,8 @@ Milestone 2 is the gate: if Block A is not right, nothing generated afterwards i
 | 3 | Methodology page published at `kiloslov.ru` | author | milestone 7 |
 | 4 | European VPS provisioned, token and key installed | author | milestone 7 |
 | 5 | Genre reference list — free text in v1.0 | author | future version |
+| 7 | Read the three condensed variants (`*.condensed.md`) | author | §12.4 comparison |
+| 8 | Re-derive §7.1 and §7.4 from measured spend | — | opening payments |
 | 6 | Whether content-shift twists should be split for Growth/Decline (8 extra formulas → 192) | author | future methodology version |
 
 ---
