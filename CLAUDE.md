@@ -67,9 +67,9 @@ No code change.
 ## Commands
 
 ```bash
-.venv/bin/pytest -q                  # 579 tests
+.venv/bin/pytest -q                  # 639 tests
 .venv/bin/ruff check . && .venv/bin/ruff format .
-.venv/bin/mypy core scripts bot      # strict
+.venv/bin/mypy core scripts bot db   # strict
 
 python scripts/import_fb2.py methodology/source/twist_generator_v1.fb2
 python scripts/dump_prompt.py --out /tmp/prompts   # the prompt, for reading

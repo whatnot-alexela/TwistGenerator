@@ -7,10 +7,12 @@ Bot: [@twist_generator](https://t.me/twist_generator) · Methodology: https://ki
 
 ## Status
 
-Milestone 1 complete: the methodology is data, the formula and paradox logic is
-implemented and tested. No bot handlers yet.
+Milestones 1–3 complete: the methodology is data, the prompt assembles behind a
+profile switch, and the bot generates, stores and rates twists in Mode 1.
+Mode 2 (start from a described situation) and payments are not built yet.
 
 - **[docs/SPEC.md](docs/SPEC.md)** — full technical specification
+- **[CLAUDE.md](CLAUDE.md)** — working notes, starting with what things cost
 
 ## Formula notation
 
@@ -40,6 +42,12 @@ the author's generation matrix for all 192 formulas.
 |---|---|
 | `core/formula.py` | formula parsing and the paradox rule |
 | `core/catalog.py` | the example catalogue and per-generation slice selection |
+| `core/prompt/` | prompt assembly: the core behind a profile switch, the per-formula slice, redactions |
+| `core/claude.py` | the API wrapper: retries, refusals, cost recording |
+| `core/quota.py` | free allowance, paid units, budget caps |
+| `core/service.py` | quota → prompt → API → store, in that order |
+| `bot/` | handlers, keyboards, and every user-facing string in `texts.py` |
+| `db/` | schema and sessions |
 | `scripts/import_fb2.py` | turns the methodology's FB2 source into prompt blocks and YAML |
 | `methodology/source/` | the methodology, as authored |
 | `methodology/core/` | generated prompt core blocks |
@@ -71,8 +79,10 @@ tables or any core block marked `frozen: true`.
 python3.12 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 
-.venv/bin/pytest -q          # tests
-.venv/bin/ruff check .       # lint
-.venv/bin/ruff format .      # format
-.venv/bin/mypy core scripts  # types
+.venv/bin/pytest -q             # 639 tests
+.venv/bin/ruff check .          # lint
+.venv/bin/ruff format .         # format
+.venv/bin/mypy core scripts bot db
+
+python scripts/generate.py 6и-ФК --dry-run   # inspect a prompt, spend nothing
 ```
