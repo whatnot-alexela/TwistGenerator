@@ -79,7 +79,7 @@ tables or any core block marked `frozen: true`.
 python3.12 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 
-.venv/bin/pytest -q             # 639 tests
+.venv/bin/pytest -q             # 703 tests
 .venv/bin/ruff check .          # lint
 .venv/bin/ruff format .         # format
 .venv/bin/mypy core scripts bot db
