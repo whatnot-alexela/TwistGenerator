@@ -70,16 +70,18 @@ No code change.
 ## Commands
 
 ```bash
-.venv/bin/pytest -q                  # 703 tests
+.venv/bin/pytest -q                  # 730 tests
 .venv/bin/ruff check . && .venv/bin/ruff format .
 .venv/bin/mypy core scripts bot db   # strict
 
 python scripts/import_fb2.py methodology/source/twist_generator_v1.fb2
 python scripts/dump_prompt.py --out /tmp/prompts   # the prompt, for reading
 python scripts/generate.py 6и-ФК --dry-run         # a slice, spending nothing
+python scripts/build_page.py                       # docs/methodology.html
 ```
 
-CI runs all of the above and fails if the committed methodology data is stale.
+CI runs all of the above and fails if the committed methodology data — or the
+generated page — is stale.
 
 ## Conventions
 

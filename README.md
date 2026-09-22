@@ -7,11 +7,14 @@ Bot: [@twist_generator](https://t.me/twist_generator) · Methodology: https://ki
 
 ## Status
 
-Milestones 1–3 complete: the methodology is data, the prompt assembles behind a
-profile switch, and the bot generates, stores and rates twists in both modes.
-Mode 2 (start from a described situation) works too. Payments are not built yet.
+Everything that does not need a server is built: both generation modes,
+payments, quotas and budget caps, owner tooling, migrations, the Docker stack
+and the public methodology page. What is left is deployment itself — and with
+it the first real API call, which is what turns every cost figure in the
+specification from an estimate into a measurement.
 
 - **[docs/SPEC.md](docs/SPEC.md)** — full technical specification
+- **[docs/DEPLOY.md](docs/DEPLOY.md)** — deployment, written for a non-programmer
 - **[CLAUDE.md](CLAUDE.md)** — working notes, starting with what things cost
 
 ## Formula notation
@@ -49,6 +52,8 @@ the author's generation matrix for all 192 formulas.
 | `bot/` | handlers, keyboards, and every user-facing string in `texts.py` |
 | `db/` | schema and sessions |
 | `scripts/import_fb2.py` | turns the methodology's FB2 source into prompt blocks and YAML |
+| `scripts/build_page.py` | generates `docs/methodology.html`, the public page |
+| `migrations/` | Alembic schema migrations; run automatically before the bot starts |
 | `methodology/source/` | the methodology, as authored |
 | `methodology/core/` | generated prompt core blocks |
 | `methodology/tables/` | reference tables, hand-transcribed from the source's images |
@@ -79,10 +84,11 @@ tables or any core block marked `frozen: true`.
 python3.12 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 
-.venv/bin/pytest -q             # 703 tests
+.venv/bin/pytest -q             # 730 tests
 .venv/bin/ruff check .          # lint
 .venv/bin/ruff format .         # format
 .venv/bin/mypy core scripts bot db
 
 python scripts/generate.py 6и-ФК --dry-run   # inspect a prompt, spend nothing
+python scripts/build_page.py                 # rebuild docs/methodology.html
 ```

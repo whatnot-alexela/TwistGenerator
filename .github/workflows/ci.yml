@@ -35,3 +35,9 @@ jobs:
           python scripts/import_fb2.py methodology/source/twist_generator_v1.fb2
           git diff --exit-code -- methodology/examples methodology/core \
             || { echo "::error::Committed methodology data is stale — re-run scripts/import_fb2.py and commit."; exit 1; }
+
+      - name: Methodology page is current
+        run: |
+          python scripts/build_page.py
+          git diff --exit-code -- docs/methodology.html \
+            || { echo "::error::docs/methodology.html is stale — re-run scripts/build_page.py and commit."; exit 1; }

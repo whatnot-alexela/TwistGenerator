@@ -203,3 +203,11 @@ def situation_cause_2(change_type: int, change_kind: str, cause_1: str) -> Inlin
         )
     builder.adjust(1)
     return builder.as_markup()
+
+
+def packs(available: Sequence[tuple[str, int, int]]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for pack_id, units, stars in available:
+        builder.button(text=f"{units} генераций — {stars} ⭐", callback_data=f"pack:{pack_id}")
+    builder.adjust(1)
+    return builder.as_markup()

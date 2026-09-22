@@ -280,6 +280,46 @@ CONDITIONAL: Final[str] = (
     "Если принять его за верное — генерируем."
 )
 
+PACK_GONE: Final[str] = "Этот пакет больше не продаётся. Откройте /buy и выберите другой."
+
+
+def pack_title(units: int) -> str:
+    return f"{units} генераций"
+
+
+def pack_description(units: int) -> str:
+    return (
+        f"{units} генераций твистов. Генерация по формуле — 1 единица, "
+        "по описанию ситуации — 2. Единицы не сгорают."
+    )
+
+
+def buy(packs: Any, balance: int) -> str:
+    lines = [
+        "<b>Пакеты генераций</b>",
+        "",
+        "Бесплатные лимиты обновляются каждый день. Пакет нужен, только если их не хватает.",
+        "",
+        "Одна генерация по формуле — 1 единица, по описанию ситуации — 2. "
+        "Купленные единицы не сгорают.",
+        "",
+    ]
+    for _, units, stars in packs:
+        lines.append(f"• <b>{units} генераций</b> — {stars} ⭐")
+    if balance:
+        lines += ["", f"Сейчас у вас: {balance} единиц."]
+    lines += ["", "<i>Оплата окончательная, возврат не предусмотрен.</i>"]
+    return "\n".join(lines)
+
+
+def payment_thanks(credited: int, balance: int) -> str:
+    if credited == 0:
+        # A replayed delivery: nothing was added, and saying otherwise would
+        # make the balance look wrong.
+        return f"Этот платёж уже был зачислен. На счету: {balance} единиц."
+    return f"Спасибо! Зачислено {credited} единиц.\nТеперь на счету: <b>{balance}</b>."
+
+
 EXPORT_EMPTY: Final[str] = "Выгружать пока нечего — ни одной генерации."
 
 EXPORT_BAD_DATES: Final[str] = (

@@ -27,6 +27,8 @@ packages = ["core", "bot", "db"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Alembic writes these; reformatting them would only obscure what it generated.
+extend-exclude = ["migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

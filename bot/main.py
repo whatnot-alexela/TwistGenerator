@@ -17,7 +17,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
 from bot.config import ConfigError, Settings, load_settings
-from bot.handlers import admin, mode_formula, mode_situation, rating, start
+from bot.handlers import admin, mode_formula, mode_situation, payments, rating, start
 from bot.middlewares.single_flight import SingleFlight
 from bot.middlewares.user_context import UserContextMiddleware
 from core.catalog import Catalog
@@ -34,6 +34,7 @@ COMMANDS = [
     BotCommand(command="formula", description="Собрать твист по формуле"),
     BotCommand(command="situation", description="Начать с описания ситуации"),
     BotCommand(command="limits", description="Сколько осталось на сегодня"),
+    BotCommand(command="buy", description="Купить пакет генераций"),
     BotCommand(command="methodology", description="Методика целиком"),
     BotCommand(command="help", description="Как устроена формула"),
     BotCommand(command="cancel", description="Начать заново"),
@@ -58,6 +59,7 @@ def build_dispatcher(settings: Settings, service: GenerationService) -> Dispatch
     dispatcher.include_router(mode_formula.router)
     dispatcher.include_router(mode_situation.router)
     dispatcher.include_router(rating.router)
+    dispatcher.include_router(payments.router)
     dispatcher.include_router(admin.router)
     return dispatcher
 
