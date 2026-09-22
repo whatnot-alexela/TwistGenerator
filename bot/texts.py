@@ -10,7 +10,7 @@ keeping them side by side is what stops them drifting apart.
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Any, Final
 
 from core.catalog import Coverage, Slice
 from core.formula import CAUSES, CHANGE_KINDS, CHANGE_TYPES, Formula, ParadoxVerdict
@@ -193,6 +193,60 @@ def limits(free_formula: int, free_expectation: int, paid: int) -> str:
         f"Оплачено: {paid}\n\n"
         "Бесплатные обновляются в полночь по Москве."
     )
+
+
+EXPORT_EMPTY: Final[str] = "Выгружать пока нечего — ни одной генерации."
+
+EXPORT_BAD_DATES: Final[str] = (
+    "{error}\n\nФормат: <code>/export 2026-09-01 2026-09-30</code>. Обе даты можно не указывать."
+)
+
+
+def export_caption(rows: dict[str, int]) -> str:
+    return (
+        "Выгрузка готова.\n"
+        f"Генераций: {rows.get('generations', 0)}\n"
+        f"Вызовов к API: {rows.get('api_calls', 0)}\n"
+        f"Пользователей: {rows.get('users', 0)}"
+    )
+
+
+def stats(figures: Any) -> str:
+    """The owner's dashboard. The average cost is the line that matters: it is
+    what replaces the estimate the pack prices were built on."""
+    lines = [
+        "<b>Статистика</b>",
+        "",
+        f"Генераций: {figures.generations}",
+        f"Пользователей: {figures.users}",
+    ]
+    if figures.rated:
+        share = round(figures.rated / figures.generations * 100) if figures.generations else 0
+        lines.append(f"Оценено: {figures.rated} ({share}%), средняя {figures.average_score}")
+    else:
+        lines.append("Оценок пока нет")
+
+    lines += [
+        "",
+        "<b>Деньги</b>",
+        f"Сегодня: ${figures.spend_today:.2f}",
+        f"За месяц: ${figures.spend_month:.2f} из $100",
+        f"Всего: ${figures.spend_total:.2f}",
+    ]
+    if figures.average_cost is not None:
+        lines.append(f"<b>В среднем за генерацию: ${figures.average_cost:.3f}</b>")
+        lines.append("<i>Оценка в спецификации — $0.25. Сверьте.</i>")
+
+    lines += [
+        "",
+        f"Токенов: {figures.tokens_in:,} вход / {figures.tokens_out:,} выход".replace(",", " "),
+    ]
+    if figures.cache_reads:
+        lines.append(f"Прочитано из кэша: {figures.cache_reads:,}".replace(",", " "))
+    if figures.failures:
+        lines.append(f"Неудачных вызовов: {figures.failures}")
+
+    return "\n".join(lines)
 
 
 def methodology(url: str) -> str:

@@ -753,22 +753,40 @@ No automatic deletion in v1.0. The bot stores user-authored text (situations, ch
 
 ## 9. Admin
 
-`/export` — owner only, identified by `OWNER_TELEGRAM_ID`. Any other user gets the standard "неизвестная команда" response; the command is absent from the public command list.
+Owner-only, identified by `OWNER_TELEGRAM_ID`. Neither command appears in the
+public command list, and a non-owner gets the same silence an unrecognised
+command gets — replying "you are not the owner" tells a stranger the command
+exists.
 
-Produces an XLSX with four sheets and sends it as a document:
+### `/stats`
+
+A message: generations, users, share rated and the average score, spend today
+and this month against the $100 cap, tokens, failed calls. The line that
+matters is **the measured average cost per generation** — the figure that
+replaces the $0.25 estimate §7 is built on, and with it the pack prices.
+
+### `/export`
+
+An XLSX, five sheets:
 
 | Sheet | Contents |
 |---|---|
-| `generations` | full join of `generations` + `ratings` + aggregated `api_calls` cost |
-| `ratings` | score distribution by formula, by paradox class, by mode |
-| `costs` | daily and monthly spend, tokens, average cost per generation, cache hit rate |
-| `users` | per-user counts, paid units, first and last seen |
+| `generations` | every generation with its formula, paradox class, coverage, user input, rating, comment, measured cost and full text |
+| `ratings` | average score cut by formula, by paradox class, by mode, and by whether the methodology had an example |
+| `costs` | free and paid spend per day, straight from the ledger |
+| `api_calls` | every call including the failed ones, with tokens, latency and error |
+| `users` | per user: generations, remaining units, Stars bought, first and last seen |
 
-Optional arguments: `/export 2026-09-01 2026-09-30` to bound the period. Default: all data.
+`/export 2026-09-01 2026-09-30` bounds the period; both dates are optional.
 
-Additional owner commands: `/stats` (same figures as a short message), `/setlimit <key> <value>` (adjusts a runtime cap, written to the database and audited).
+Two things the sheet writer has to do, because otherwise the file silently
+lies: control characters are stripped (openpyxl refuses them, and a user can
+paste anything into a comment) and text over Excel's 32 000-character limit is
+truncated with a visible marker rather than quietly cut.
 
----
+The `ratings` sheet is the research output the whole rating mechanism exists
+for: it is what answers whether a paradox class, or a formula without a
+catalogued example, generates worse twists.
 
 ## 10. Architecture
 
@@ -943,7 +961,7 @@ matter until he has read them.
 | 1 | FB2 import pipeline, table transcription, `examples/*.yaml` for `1е` and `6и`, formula and paradox modules with full unit tests | **done** |
 | 2 | Prompt core behind a profile switch, redaction and correction layers, condensed variants — the quality gate for everything downstream | **done**, awaiting the author's reading of the three `*.condensed.md` variants |
 | 3 | Mode 1 end to end: slice, API wrapper, database, quotas, budget caps, cost logging, rating | **built and tested against a stub; no real API call has been made yet** |
-| 4 | `/export`, `/stats`, owner tooling | not started |
+| 4 | `/export`, `/stats`, owner tooling | **done** |
 | 5 | Mode 2: analysis call, compatibility map, override and contradiction handling | not started |
 | 6 | Telegram Stars payments | not started |
 | 7 | Deployment to the European VPS, methodology page on `kiloslov.ru`, stage-1 acceptance testing | not started |

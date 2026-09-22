@@ -16,7 +16,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install tooling
-        run: pip install pytest pytest-asyncio pyyaml ruff mypy "sqlalchemy[asyncio]" aiosqlite "aiogram>=3.15"
+        run: pip install pytest pytest-asyncio pyyaml ruff mypy "sqlalchemy[asyncio]" aiosqlite "aiogram>=3.15" openpyxl
 
       - name: Lint
         run: ruff check .

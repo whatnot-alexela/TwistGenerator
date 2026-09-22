@@ -186,9 +186,11 @@ def test_every_optional_field_has_a_prompt_and_a_limit() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_export_is_not_advertised() -> None:
-    """Owner-only; listing it invites everyone to try."""
-    assert "export" not in {command.command for command in COMMANDS}
+def test_owner_commands_are_not_advertised() -> None:
+    """Listing them invites everyone to try."""
+    advertised = {command.command for command in COMMANDS}
+    assert "export" not in advertised
+    assert "stats" not in advertised
 
 
 def test_the_advertised_commands_all_have_descriptions() -> None:
