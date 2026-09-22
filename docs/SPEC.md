@@ -938,17 +938,27 @@ matter until he has read them.
 
 ## 13. Milestones
 
-| # | Deliverable |
-|---|---|
-| 1 | FB2 import pipeline, table transcription, `examples/*.yaml` for `1е` and `6и`, formula and paradox modules with full unit tests |
-| 2 | Prompt core assembled behind a profile switch, redaction layer, condensed variants — reviewed by the author, the quality gate for everything downstream |
-| 3 | Mode 1 end to end with a real API call, database writes, rating |
-| 4 | Quotas, budget caps, cost logging, `/export` |
-| 5 | Mode 2: analysis call, compatibility map, override and contradiction handling |
-| 6 | Telegram Stars payments |
-| 7 | Deployment to the European VPS, methodology page on `kiloslov.ru`, stage-1 acceptance testing |
+| # | Deliverable | Status |
+|---|---|---|
+| 1 | FB2 import pipeline, table transcription, `examples/*.yaml` for `1е` and `6и`, formula and paradox modules with full unit tests | **done** |
+| 2 | Prompt core behind a profile switch, redaction and correction layers, condensed variants — the quality gate for everything downstream | **done**, awaiting the author's reading of the three `*.condensed.md` variants |
+| 3 | Mode 1 end to end: slice, API wrapper, database, quotas, budget caps, cost logging, rating | **built and tested against a stub; no real API call has been made yet** |
+| 4 | `/export`, `/stats`, owner tooling | not started |
+| 5 | Mode 2: analysis call, compatibility map, override and contradiction handling | not started |
+| 6 | Telegram Stars payments | not started |
+| 7 | Deployment to the European VPS, methodology page on `kiloslov.ru`, stage-1 acceptance testing | not started |
 
-Milestone 2 is the gate: if Block A is not right, nothing generated afterwards is trustworthy.
+Two things moved from the first draft of this table. Quotas, budget caps and
+cost logging were listed under milestone 4; they are inseparable from the
+generation path and shipped with milestone 3 instead. And milestone 3 was
+written as "end to end with a real API call" — the code is complete and
+exercised against a stubbed client, but **no generation has yet been made
+against the live API**, because this project has no key and the development
+machine is in an unsupported region (§5.2). Until milestone 7, every cost
+figure in §7 remains an estimate.
+
+Milestone 2 is the quality gate: if the core is wrong, nothing generated
+afterwards is trustworthy.
 
 ---
 
