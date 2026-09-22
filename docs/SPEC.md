@@ -274,12 +274,12 @@ async with client.messages.stream(
     model="claude-opus-5",
     max_tokens=8000,
     system=[
-        {"type": "text", "text": BLOCK_A},          # + cache_control when caching is on
+        {"type": "text", "text": BLOCK_A},  # + cache_control when caching is on
         {"type": "text", "text": block_b},
     ],
     messages=[{"role": "user", "content": block_c}],
     thinking={"type": "adaptive"},
-    output_config={"effort": settings.generation_effort},   # default "high"
+    output_config={"effort": settings.generation_effort},  # default "high"
     betas=["server-side-fallback-2026-07-01"],
     fallbacks="default",
 ) as stream:
@@ -300,7 +300,7 @@ One call, structured output, low effort — it is a classification task, not a c
 message = await client.messages.create(
     model="claude-opus-5",
     max_tokens=4000,
-    system=[{"type": "text", "text": BLOCK_A_CLASSIFIER}],   # a01–a06, a10 only
+    system=[{"type": "text", "text": BLOCK_A_CLASSIFIER}],  # a01–a06, a10 only
     messages=[{"role": "user", "content": user_situation}],
     thinking={"type": "adaptive"},
     output_config={"effort": "low", "format": EXPECTATION_ANALYSIS_SCHEMA},

@@ -7,10 +7,10 @@ Bot: [@twist_generator](https://t.me/twist_generator) · Methodology: https://ki
 
 ## Status
 
-Specification approved. Implementation not started.
+Milestone 1 complete: the methodology is data, the formula and paradox logic is
+implemented and tested. No bot handlers yet.
 
 - **[docs/SPEC.md](docs/SPEC.md)** — full technical specification
-- `methodology/source/` — the methodology source (FB2)
 
 ## Formula notation
 
@@ -19,8 +19,60 @@ Specification approved. Implementation not started.
                                     e.g.  1е-ФД,  6и-КМ
 ```
 
-Change types: 1 Место · 2 Качество · 3 Рост · 4 Убыль · 5 Возникновение · 6 Исчезновение
-Kinds: е естественное · и искусственное
-Causes: Ф Формальная · М Материальная · Д Действующая · К Конечная
+| | |
+|---|---|
+| Change types | 1 Место · 2 Качество · 3 Рост · 4 Убыль · 5 Возникновение · 6 Исчезновение |
+| Kinds | е естественное · и искусственное |
+| Causes | Ф Формальная · М Материальная · Д Действующая · К Конечная |
 
-Stage 1 works against the two groups whose example appendices are complete: `1е` and `6и`.
+The code space is 6 × 2 × 4 × 4 = **192 formulas**.
+
+### Paradoxes are computed, never looked up
+
+For a natural change (`е`) the foreign causes are Д and К; for an artificial one
+(`и`) they are Ф and М. Paradox №1 fires when the Expectation's cause is foreign,
+paradox №2 when the Revelation's is. `tests/test_formula.py` checks this against
+the author's generation matrix for all 192 formulas.
+
+## Layout
+
+| Path | Contents |
+|---|---|
+| `core/formula.py` | formula parsing and the paradox rule |
+| `core/catalog.py` | the example catalogue and per-generation slice selection |
+| `scripts/import_fb2.py` | turns the methodology's FB2 source into prompt blocks and YAML |
+| `methodology/source/` | the methodology, as authored |
+| `methodology/core/` | generated prompt core blocks |
+| `methodology/tables/` | reference tables, hand-transcribed from the source's images |
+| `methodology/examples/` | the example catalogue, generated |
+| `tests/fixtures/matrix.csv` | the generation matrix, hand-transcribed |
+
+## Data coverage
+
+Example appendices are finished for groups `1е` and `6и` only — 24 formulas,
+29 worked examples, 20 film and book references. Ten of those formulas have an
+example but no reference and so earn the *«малоисследованный твист»* message.
+The other 168 formulas are uncatalogued: the bot still generates for them, from
+the rules alone.
+
+When a new appendix is ready, append it to the FB2 and re-run the importer; no
+code changes are needed.
+
+```bash
+python scripts/import_fb2.py methodology/source/twist_generator_v1.fb2
+```
+
+The script prints a coverage report and never overwrites the hand-transcribed
+tables or any core block marked `frozen: true`.
+
+## Development
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
+
+.venv/bin/pytest -q          # tests
+.venv/bin/ruff check .       # lint
+.venv/bin/ruff format .      # format
+.venv/bin/mypy core scripts  # types
+```
