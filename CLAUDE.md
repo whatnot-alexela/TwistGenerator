@@ -5,9 +5,10 @@ methodology — 192 formulas from Aristotle's four causes and six types of chang
 The author of the methodology is the owner of this repository.
 
 Full design: **docs/SPEC.md**. Read it before touching the
-methodology, the prompt or anything that costs money.
+methodology, the prompt or anything.
 
-Keep your replies extremely concise and focus on conveying the key information. No unnecessary fluff, no long code snippets.
+Keep your replies extremely concise and focus on conveying the key information. 
+No unnecessary fluff, no long code snippets.
 
 ## Money — read this first
 
