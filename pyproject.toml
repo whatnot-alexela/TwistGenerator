@@ -1,0 +1,43 @@
+[project]
+name = "twist-generator"
+version = "0.1.0"
+description = "Telegram bot generating plot twists by the Twist Generator 1.0 methodology"
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.15",
+    "anthropic>=0.40",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pydantic-settings>=2.7",
+    "pyyaml>=6.0",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.25", "ruff>=0.8", "mypy>=1.14", "pillow>=11.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["core", "bot", "db"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# Alembic writes these; reformatting them would only obscure what it generated.
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

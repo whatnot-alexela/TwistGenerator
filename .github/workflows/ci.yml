@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tooling
+        run: pip install pytest pytest-asyncio pyyaml ruff mypy "sqlalchemy[asyncio]" aiosqlite "aiogram>=3.15" openpyxl
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format
+        run: ruff format --check .
+
+      - name: Types
+        run: mypy core scripts bot db
+
+      - name: Tests
+        run: pytest -q
+
+      - name: Methodology import is reproducible
+        run: |
+          python scripts/import_fb2.py methodology/source/twist_generator_v1.fb2
+          git diff --exit-code -- methodology/examples methodology/core \
+            || { echo "::error::Committed methodology data is stale — re-run scripts/import_fb2.py and commit."; exit 1; }
+
+      - name: Methodology page is current
+        run: |
+          python scripts/build_page.py
+          git diff --exit-code -- docs/methodology.html \
+            || { echo "::error::docs/methodology.html is stale — re-run scripts/build_page.py and commit."; exit 1; }
