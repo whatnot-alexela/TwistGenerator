@@ -130,34 +130,30 @@ SCHEMA: Final[dict[str, Any]] = {
         },
         "top_readings": {
             "type": "array",
-            "minItems": 0,
-            "maxItems": 2,
             "items": {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["change_type", "change_kind", "cause_1", "justification"],
                 "properties": {
-                    "change_type": {"type": "integer", "minimum": 1, "maximum": 6},
+                    "change_type": {"type": "integer", "enum": [1, 2, 3, 4, 5, 6]},
                     "change_kind": {"type": "string", "enum": ["е", "и"]},
                     "cause_1": {"type": "string", "enum": ["Ф", "М", "Д", "К"]},
-                    "justification": {"type": "string", "maxLength": 600},
+                    "justification": {"type": "string", "description": "Не длиннее 600 знаков"},
                 },
             },
         },
         "compatibility": {
             "type": "array",
-            "minItems": LEFT_HALF_SIZE,
-            "maxItems": LEFT_HALF_SIZE,
             "items": {
                 "type": "object",
                 "additionalProperties": False,
                 "required": ["change_type", "change_kind", "cause_1", "verdict"],
                 "properties": {
-                    "change_type": {"type": "integer", "minimum": 1, "maximum": 6},
+                    "change_type": {"type": "integer", "enum": [1, 2, 3, 4, 5, 6]},
                     "change_kind": {"type": "string", "enum": ["е", "и"]},
                     "cause_1": {"type": "string", "enum": ["Ф", "М", "Д", "К"]},
                     "verdict": {"type": "string", "enum": ["ok", "conditional", "contradiction"]},
-                    "condition": {"type": "string", "maxLength": 300},
+                    "condition": {"type": "string", "description": "Не длиннее 300 знаков"},
                 },
             },
         },

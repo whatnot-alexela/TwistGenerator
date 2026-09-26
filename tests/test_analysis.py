@@ -16,6 +16,7 @@ import pytest
 
 from core.analysis import (
     LEFT_HALF_SIZE,
+    SCHEMA,
     Analysis,
     AnalysisError,
     Compatibility,
@@ -297,3 +298,48 @@ def test_compatibility_defaults_to_no_condition() -> None:
 def test_the_left_half_is_forty_eight_options() -> None:
     assert LEFT_HALF_SIZE == 48
     assert len(full_map()) == 48
+
+
+# --------------------------------------------------------------------------- #
+# The schema the API will accept
+# --------------------------------------------------------------------------- #
+
+#: Structured outputs take a subset of JSON Schema. Two keywords this schema
+#: once used are rejected outright — `maxItems` ("For 'array' type, property
+#: 'maxItems' is not supported") and, with it, `minItems`; `minimum`, `maximum`
+#: and `maxLength` are not worth the next 400 either. Nothing here replaces
+#: them: the 48-entry completeness check lives in `parse_analysis`, and the
+#: bounds live in the instruction text.
+ALLOWED_KEYWORDS = {
+    "type",
+    "properties",
+    "required",
+    "additionalProperties",
+    "items",
+    "enum",
+    "description",
+}
+
+
+def walk(node: Any, path: str = "SCHEMA") -> list[str]:
+    found: list[str] = []
+    if not isinstance(node, dict):
+        return found
+    for key, value in node.items():
+        if key not in ALLOWED_KEYWORDS:
+            found.append(f"{path}.{key}")
+        if key == "properties" and isinstance(value, dict):
+            found += [item for name, sub in value.items() for item in walk(sub, f"{path}.{name}")]
+        elif key == "items":
+            found += walk(value, f"{path}[]")
+    return found
+
+
+def test_the_schema_uses_only_keywords_the_api_accepts() -> None:
+    assert walk(SCHEMA) == []
+
+
+def test_completeness_is_enforced_by_the_parser_rather_than_the_schema() -> None:
+    """The schema can no longer pin the map to 48 entries — this must."""
+    with pytest.raises(AnalysisError, match="карта совместимости неполная"):
+        parse_analysis(payload(compatibility=full_map()[:47]))
