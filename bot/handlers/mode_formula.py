@@ -10,13 +10,15 @@ from __future__ import annotations
 
 import logging
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot import keyboards, texts
+from bot.config import Settings
 from bot.fsm.states import Formula as FormulaStates
 from bot.middlewares.single_flight import SingleFlight
+from bot.notify import tell_owner
 from core.claude import ClaudeError, Outcome
 from core.formula import Formula
 from core.prompt.slice import (
@@ -176,6 +178,8 @@ async def generate(
     service: GenerationService,
     user_id: int,
     single_flight: SingleFlight,
+    bot: Bot,
+    settings: Settings,
 ) -> None:
     data = await state.get_data()
     code = data.get("formula")
@@ -208,10 +212,19 @@ async def generate(
             return
         except ClaudeError as failure:
             await notice.edit_text(FAILURES[failure.outcome])
+            if failure.outcome is not Outcome.UNAVAILABLE:
+                # UNAVAILABLE is Anthropic being busy; it passes on its own and
+                # is not worth a message. The rest means something is wrong here.
+                await tell_owner(
+                    bot, settings.owner_telegram_id, f"Генерация {code} не удалась", str(failure)
+                )
             return
-        except Exception:
+        except Exception as blew_up:
             logger.exception("generation blew up for user %s", user_id)
             await notice.edit_text(texts.ERROR_GENERIC)
+            await tell_owner(
+                bot, settings.owner_telegram_id, f"Сбой при генерации {code}", repr(blew_up)
+            )
             return
 
     await notice.delete()

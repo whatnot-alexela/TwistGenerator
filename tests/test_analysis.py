@@ -224,7 +224,11 @@ async def test_the_request_asks_for_structured_output_at_low_effort() -> None:
 
     sent = messages.calls[0]
     assert sent["output_config"]["effort"] == "low"
-    assert sent["output_config"]["format"]["required"] == [
+    # The API takes a wrapper around the schema. Sending the schema bare was a
+    # live 400 — "output_config.format.type: Input should be 'json_schema'" —
+    # and no stub could have caught it, so it is pinned here.
+    assert sent["output_config"]["format"]["type"] == "json_schema"
+    assert sent["output_config"]["format"]["schema"]["required"] == [
         "classifiable",
         "top_readings",
         "compatibility",

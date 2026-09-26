@@ -164,6 +164,11 @@ SCHEMA: Final[dict[str, Any]] = {
     },
 }
 
+#: What the request actually carries. The API takes a *wrapper* around the
+#: schema, not the schema itself: sending `SCHEMA` bare is rejected with
+#: "output_config.format.type: Input should be 'json_schema'".
+OUTPUT_FORMAT: Final[dict[str, Any]] = {"type": "json_schema", "schema": SCHEMA}
+
 INSTRUCTION: Final[str] = """# Задача: прочитать ситуацию как левую половину формулы
 
 Пользователь описал исходную ситуацию — это его Ожидание. Определи, какой
@@ -274,7 +279,7 @@ async def analyse(
             system=[{"type": "text", "text": f"{system}\n\n{INSTRUCTION}"}],
             messages=[{"role": "user", "content": situation}],
             thinking={"type": "adaptive"},
-            output_config={"effort": effort, "format": SCHEMA},
+            output_config={"effort": effort, "format": OUTPUT_FORMAT},
         )
     except Exception as exc:  # noqa: BLE001 — classified by the caller's taxonomy
         name = type(exc).__name__

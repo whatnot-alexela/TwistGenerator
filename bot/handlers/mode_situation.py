@@ -16,17 +16,19 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from aiogram import F, Router
+from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot import keyboards, texts
+from bot.config import Settings
 from bot.fsm.states import Situation
 from bot.handlers.mode_formula import FAILURES, REFUSALS
 from bot.middlewares.single_flight import SingleFlight
+from bot.notify import tell_owner
 from core.analysis import Analysis, Compatibility, Reading, Verdict
-from core.claude import ClaudeError
+from core.claude import ClaudeError, Outcome
 from core.formula import Formula
 from core.prompt.slice import MAX_SITUATION, UserInput
 from core.quota import Mode
@@ -64,6 +66,8 @@ async def analyse(
     service: GenerationService,
     user_id: int,
     single_flight: SingleFlight,
+    bot: Bot,
+    settings: Settings,
 ) -> None:
     situation = (message.text or "").strip()
     if len(situation) > MAX_SITUATION:
@@ -83,10 +87,17 @@ async def analyse(
             return
         except ClaudeError as failure:
             await notice.edit_text(FAILURES[failure.outcome])
+            if failure.outcome is not Outcome.UNAVAILABLE:
+                await tell_owner(
+                    bot, settings.owner_telegram_id, "Разбор ситуации не удался", str(failure)
+                )
             return
-        except Exception:
+        except Exception as blew_up:
             logger.exception("analysis blew up for user %s", user_id)
             await notice.edit_text(texts.ERROR_GENERIC)
+            await tell_owner(
+                bot, settings.owner_telegram_id, "Сбой при разборе ситуации", repr(blew_up)
+            )
             return
 
     await notice.delete()
@@ -247,6 +258,8 @@ async def generate(
     service: GenerationService,
     user_id: int,
     single_flight: SingleFlight,
+    bot: Bot,
+    settings: Settings,
 ) -> None:
     _, raw_type, change_kind, cause_1, cause_2 = str(query.data).split(":")
     formula = Formula(
@@ -286,10 +299,23 @@ async def generate(
             return
         except ClaudeError as failure:
             await notice.edit_text(FAILURES[failure.outcome])
+            if failure.outcome is not Outcome.UNAVAILABLE:
+                await tell_owner(
+                    bot,
+                    settings.owner_telegram_id,
+                    f"Генерация {formula.code} не удалась",
+                    str(failure),
+                )
             return
-        except Exception:
+        except Exception as blew_up:
             logger.exception("situation generation blew up for user %s", user_id)
             await notice.edit_text(texts.ERROR_GENERIC)
+            await tell_owner(
+                bot,
+                settings.owner_telegram_id,
+                f"Сбой при генерации {formula.code}",
+                repr(blew_up),
+            )
             return
 
     await notice.delete()
