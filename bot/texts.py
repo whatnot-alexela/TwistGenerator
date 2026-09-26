@@ -24,6 +24,28 @@ START: Final[str] = (
     "С чего начнём?"
 )
 
+#: What each cause is, in one word. The letters mean nothing to a reader who
+#: has not read the methodology, and «Формальная» barely more.
+CAUSE_GLOSS: Final[dict[str, str]] = {
+    "Ф": "замысел",
+    "М": "ресурс",
+    "Д": "исполнитель",
+    "К": "цель",
+}
+
+
+def cause_label(letter: str) -> str:
+    """``Ф · Формальная (замысел)`` — for a button that has room for it."""
+    return f"{letter} · {CAUSES[letter]} ({CAUSE_GLOSS[letter]})"
+
+
+#: The button that is always at the bottom of the chat, so reopening the bot
+#: is never a blank screen.
+BEGIN: Final[str] = "✨ Начать"
+
+#: Shown once with the persistent button, so its purpose is obvious.
+WELCOME_BACK: Final[str] = "Кнопка «✨ Начать» внизу открывает меню в любой момент."
+
 SESSION_LOST: Final[str] = (
     "Эта кнопка уже устарела — бот перезапускался, и диалог не сохранился.\n\nСоберём заново?"
 )
@@ -59,6 +81,7 @@ CHOOSE_CAUSE_1: Final[str] = (
 )
 CHOOSE_CAUSE_2: Final[str] = (
     "<b>Шаг 4 из 4.</b> Что раскроется на самом деле?\n\n"
+    "Ф замысел · М ресурс · Д исполнитель · К цель\n\n"
     "Рядом с каждой причиной — какой парадокс получится."
 )
 
@@ -267,6 +290,7 @@ MANUAL_INTRO: Final[str] = (
 
 CHOOSE_SITUATION_CAUSE_2: Final[str] = (
     "Что раскроется на самом деле?\n\n"
+    "Ф замысел · М ресурс · Д исполнитель · К цель\n\n"
     "Здесь ограничений нет — любая из четырёх причин даёт рабочий твист, "
     "меняется только парадокс."
 )

@@ -290,9 +290,9 @@ def test_cause_buttons_carry_the_exact_verdict() -> None:
     labels = {
         b.text for row in keyboards.manual_causes(analysis, 1, "е").inline_keyboard for b in row
     }
-    assert "✅ Ф · Формальная" in labels
-    assert "⚠️ М · Материальная" in labels
-    assert "❌ Д · Действующая" in labels
+    assert "✅ Ф · Формальная (замысел)" in labels
+    assert "⚠️ М · Материальная (ресурс)" in labels
+    assert "❌ Д · Действующая (исполнитель)" in labels
 
 
 def test_the_contradiction_keyboard_offers_all_three_ways_out() -> None:
@@ -342,3 +342,37 @@ def test_the_adapted_notice_shows_the_original() -> None:
 
 def test_situation_command_is_advertised() -> None:
     assert "situation" in {command.command for command in COMMANDS}
+
+
+# --------------------------------------------------------------------------- #
+# Making the bot legible
+# --------------------------------------------------------------------------- #
+
+
+def test_cause_buttons_say_what_the_cause_is() -> None:
+    """«Ф · Формальная» means nothing until you have read the methodology."""
+    labels = [button.text for row in keyboards.causes_1(1, "е").inline_keyboard for button in row]
+    assert "Ф · Формальная (замысел)" in labels
+    assert "К · Конечная (цель)" in labels
+
+
+def test_every_cause_has_a_gloss() -> None:
+    assert set(texts.CAUSE_GLOSS) == set(CAUSES)
+
+
+def test_the_second_cause_keeps_short_labels_and_explains_above() -> None:
+    """There the paradox hint already fills the button, so the gloss goes in the text."""
+    labels = [
+        button.text for row in keyboards.causes_2(1, "е", "Ф").inline_keyboard for button in row
+    ]
+    assert all("(" not in label for label in labels)
+    for gloss in texts.CAUSE_GLOSS.values():
+        assert gloss in texts.CHOOSE_CAUSE_2
+
+
+def test_the_persistent_keyboard_is_one_short_row() -> None:
+    """It costs screen space for as long as it is there."""
+    keyboard = keyboards.begin().keyboard
+    assert len(keyboard) == 1
+    assert len(keyboard[0]) == 1
+    assert keyboard[0][0].text == texts.BEGIN

@@ -9,12 +9,30 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import texts
 from core.analysis import Analysis, Reading
 from core.formula import CAUSES, CHANGE_KINDS, CHANGE_TYPES, classify_paradox
+
+
+def begin() -> ReplyKeyboardMarkup:
+    """The one row that stays at the bottom of the chat.
+
+    Kept to a single short button on purpose: a reply keyboard takes screen
+    space away from the conversation for as long as it is there.
+    """
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=texts.BEGIN)]],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
 
 
 def modes() -> InlineKeyboardMarkup:
@@ -45,12 +63,14 @@ def change_kinds(change_type: int) -> InlineKeyboardMarkup:
 
 def causes_1(change_type: int, change_kind: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    for letter, name in CAUSES.items():
+    for letter in CAUSES:
         builder.button(
-            text=f"{letter} · {name}", callback_data=f"c1:{change_type}:{change_kind}:{letter}"
+            text=texts.cause_label(letter),
+            callback_data=f"c1:{change_type}:{change_kind}:{letter}",
         )
     builder.button(text="← Назад", callback_data=f"nav:kinds:{change_type}")
-    builder.adjust(2, 2, 1)
+    # One per row: the gloss makes the labels too long to pair up on a phone.
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -157,10 +177,10 @@ def manual_kinds(analysis: Analysis, change_type: int) -> InlineKeyboardMarkup:
 
 def manual_causes(analysis: Analysis, change_type: int, change_kind: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    for letter, name in CAUSES.items():
+    for letter in CAUSES:
         marker = analysis.verdict(change_type, change_kind, letter).verdict.marker
         builder.button(
-            text=f"{marker} {letter} · {name}",
+            text=f"{marker} {texts.cause_label(letter)}",
             callback_data=f"mc:{change_type}:{change_kind}:{letter}",
         )
     builder.button(text="← Назад", callback_data=f"mk:back:{change_type}")

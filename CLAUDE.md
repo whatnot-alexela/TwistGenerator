@@ -70,7 +70,7 @@ No code change.
 ## Commands
 
 ```bash
-.venv/bin/pytest -q                  # 740 tests
+.venv/bin/pytest -q                  # 745 tests
 .venv/bin/ruff check . && .venv/bin/ruff format .
 .venv/bin/mypy core scripts bot db   # strict
 

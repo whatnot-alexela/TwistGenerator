@@ -6,7 +6,7 @@ order.
 
 ---
 
-## 1. The first screen is not a blank chat
+## 1. The first screen is not a blank chat — **done**
 
 **Now.** A user who has met the bot before opens the chat and sees nothing: the
 `/start` screen is behind a command they have to remember.
@@ -24,9 +24,15 @@ order.
 persistent keyboard takes screen space on a phone permanently, so the button
 must be a single short row.
 
+**Shipped.** The persistent «✨ Начать» row, and a handler for it that wins over
+the ones waiting for text — pressing it while the bot expects a genre opens the
+menu instead of recording «✨ Начать» as the genre. That ordering is the part
+that would have broken quietly, so a dispatcher test pins it. The BotFather
+description is still the author's to paste.
+
 ---
 
-## 2. Cause letters carry their meaning
+## 2. Cause letters carry their meaning — **done**
 
 **Now.** The buttons read `Ф · Формальная`, which means nothing to a reader who
 has not yet read the methodology.
@@ -46,6 +52,11 @@ the label would wrap to three lines. There the gloss goes into the message
 above the buttons instead.
 
 **Cost.** Half an hour.
+
+**Shipped.** First-cause and manual-choice buttons now read
+`Ф · Формальная (замысел)`, one per row — with the gloss they no longer pair up
+on a phone. The second-cause buttons keep their short labels and the glosses
+moved into the message above them, in both modes.
 
 ---
 

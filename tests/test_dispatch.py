@@ -26,7 +26,7 @@ from aiogram.types import User as TelegramUser
 
 from bot import texts
 from bot.fsm.states import Formula as FormulaStates
-from bot.handlers import mode_formula
+from bot.handlers import mode_formula, start
 from bot.middlewares.single_flight import SingleFlight
 from core.claude import Completion
 from core.costs import Usage
@@ -69,6 +69,19 @@ def message(text: str) -> Message:
         date=datetime(2026, 1, 1),
         chat=Chat(id=CHAT_ID, type="private"),
         text=text,
+    )
+
+
+def typed(text: str) -> Update:
+    return Update(
+        update_id=2,
+        message=Message(
+            message_id=2,
+            date=datetime(2026, 1, 1),
+            chat=Chat(id=CHAT_ID, type="private"),
+            from_user=TelegramUser(id=USER_ID, is_bot=False, first_name="Автор"),
+            text=text,
+        ),
     )
 
 
@@ -122,11 +135,14 @@ def wired() -> Iterator[tuple[Dispatcher, Bot, RecordingSession, StubService]]:
         single_flight=SingleFlight(),
         settings=type("S", (), {"owner_telegram_id": 1})(),
     )
+    # start first: its handlers must win over the ones waiting for text.
+    dispatcher.include_router(start.router)
     dispatcher.include_router(mode_formula.router)
     yield dispatcher, bot, session, service
 
-    # The router is a module-level singleton and refuses to be attached twice,
-    # so each test has to hand it back.
+    # The routers are module-level singletons and refuse to be attached twice,
+    # so each test has to hand them back.
+    start.router._parent_router = None
     mode_formula.router._parent_router = None
 
 
@@ -166,3 +182,16 @@ async def test_a_stale_button_says_so_instead_of_blinking(wired: Any) -> None:
 
     assert service.calls == []
     assert texts.SESSION_LOST in session.texts_sent()
+
+
+async def test_the_persistent_button_opens_the_menu_mid_dialog(wired: Any) -> None:
+    """Pressing «Начать» while the bot waits for a genre must not become the genre."""
+    dispatcher, bot, session, _ = wired
+    context = dispatcher.fsm.get_context(bot, chat_id=CHAT_ID, user_id=USER_ID)
+    await context.set_state(FormulaStates.awaiting_genre)
+
+    await dispatcher.feed_update(bot, typed(texts.BEGIN))
+
+    assert texts.START in session.texts_sent()
+    assert await context.get_state() is None
+    assert (await context.get_data()).get("genre") is None
