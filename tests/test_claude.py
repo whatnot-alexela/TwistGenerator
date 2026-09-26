@@ -79,7 +79,13 @@ class StubMessages:
     script: list[Any]
     calls: list[dict[str, Any]] = field(default_factory=list)
 
-    async def stream(self, **kwargs: Any) -> StubStream:
+    def stream(self, **kwargs: Any) -> StubStream:
+        """Synchronous, exactly like the SDK's.
+
+        It was `async def` here, and that hid a TypeError that only appeared
+        against the live API: the real stream() returns the context manager
+        rather than a coroutine.
+        """
         self.calls.append(kwargs)
         item = self.script[min(len(self.calls) - 1, len(self.script) - 1)]
         if isinstance(item, Exception):

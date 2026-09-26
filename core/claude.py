@@ -78,7 +78,9 @@ class MessagesClient(Protocol):
     whole SDK, and it documents exactly what the bot depends on.
     """
 
-    async def stream(self, **kwargs: Any) -> Any: ...
+    # Not `async def`: the SDK's stream() returns the context manager directly,
+    # and awaiting it raises TypeError at the first real call.
+    def stream(self, **kwargs: Any) -> Any: ...
 
     async def create(self, **kwargs: Any) -> Any: ...
 
@@ -121,7 +123,7 @@ class ClaudeClient:
 
         started = time.monotonic()
         try:
-            stream = await self.messages.stream(
+            async with self.messages.stream(
                 model=self.model,
                 max_tokens=max_tokens,
                 system=system_blocks,
@@ -130,8 +132,7 @@ class ClaudeClient:
                 output_config={"effort": self.effort},
                 betas=[FALLBACK_BETA],
                 fallbacks="default",
-            )
-            async with stream as active:
+            ) as active:
                 message = await active.get_final_message()
         except Exception as exc:  # noqa: BLE001 — classified immediately below
             raise self._classify(exc) from exc

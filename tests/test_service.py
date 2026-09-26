@@ -75,7 +75,7 @@ class StubMessages:
     script: list[Any] = field(default_factory=lambda: [StubMessage()])
     calls: list[dict[str, Any]] = field(default_factory=list)
 
-    async def stream(self, **kwargs: Any) -> StubStream:
+    def stream(self, **kwargs: Any) -> StubStream:  # sync, like the SDK's
         self.calls.append(kwargs)
         item = self.script[min(len(self.calls) - 1, len(self.script) - 1)]
         if isinstance(item, Exception):
