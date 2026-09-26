@@ -50,6 +50,9 @@ FAILURES = {
     Outcome.BROKEN: texts.ERROR_GENERIC,
 }
 
+#: The one "opt:" press that is not a field.
+GENERATE = "opt:generate"
+
 FIELDS = {
     "genre": (FormulaStates.awaiting_genre, texts.ASK_GENRE, MAX_GENRE),
     "characters": (FormulaStates.awaiting_characters, texts.ASK_CHARACTERS, MAX_CHARACTERS),
@@ -127,12 +130,13 @@ async def show_card(query: CallbackQuery, state: FSMContext, service: Generation
 # --------------------------------------------------------------------------- #
 
 
-@router.callback_query(F.data.startswith("opt:"), FormulaStates.options)
+#: "opt:generate" shares the prefix but not the meaning. It has to be excluded
+#: in the filter, not inside the handler: aiogram stops at the first handler
+#: that runs, so an early `return` here swallowed every press of «Сгенерировать»
+#: and the button just blinked.
+@router.callback_query(F.data.startswith("opt:"), F.data != GENERATE, FormulaStates.options)
 async def optional_field(query: CallbackQuery, state: FSMContext) -> None:
     field = _arg(query, 1)
-    if field == "generate":
-        return  # handled by generate() below
-
     target, prompt, _ = FIELDS[field]
     await state.set_state(target)
     if query.message is not None and isinstance(query.message, Message):
@@ -171,7 +175,7 @@ async def store_field(message: Message, state: FSMContext) -> None:
 # --------------------------------------------------------------------------- #
 
 
-@router.callback_query(F.data == "opt:generate")
+@router.callback_query(F.data == GENERATE)
 async def generate(
     query: CallbackQuery,
     state: FSMContext,
@@ -183,8 +187,15 @@ async def generate(
 ) -> None:
     data = await state.get_data()
     code = data.get("formula")
-    if not code or query.message is None or not isinstance(query.message, Message):
+    if query.message is None or not isinstance(query.message, Message):
         await query.answer()
+        return
+    if not code:
+        # The dialog is gone — the bot was restarted, or the message is old.
+        # Saying so is the whole point: a button that blinks and does nothing
+        # looks like a broken bot.
+        await query.answer()
+        await query.message.answer(texts.SESSION_LOST, reply_markup=keyboards.modes())
         return
 
     async with single_flight.hold(user_id) as acquired:
