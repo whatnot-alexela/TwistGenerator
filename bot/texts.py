@@ -20,9 +20,12 @@ START: Final[str] = (
     "Строит сюжетные повороты по методике «Генератор твистов 1.0» — "
     "188 формул на основе четырёх причин Аристотеля и шести типов изменения.\n\n"
     "Твист собирается не наугад: вы задаёте формулу, и бот строит поворот "
-    "строго по ней.\n\n"
-    "С чего начнём?"
+    "строго по ней."
 )
+
+#: Carries the menu. Split from the greeting because a message can hold only
+#: one keyboard, and the greeting carries the persistent button instead.
+CHOOSE_MODE: Final[str] = "С чего начнём?"
 
 #: What each cause is, in one word. The letters mean nothing to a reader who
 #: has not read the methodology, and «Формальная» barely more.
@@ -43,8 +46,6 @@ def cause_label(letter: str) -> str:
 #: is never a blank screen.
 BEGIN: Final[str] = "✨ Начать"
 
-#: Shown once with the persistent button, so its purpose is obvious.
-WELCOME_BACK: Final[str] = "Кнопка «✨ Начать» внизу открывает меню в любой момент."
 
 SESSION_LOST: Final[str] = (
     "Эта кнопка уже устарела — бот перезапускался, и диалог не сохранился.\n\nСоберём заново?"

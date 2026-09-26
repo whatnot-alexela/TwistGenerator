@@ -20,10 +20,10 @@ router = Router(name="start")
 @router.message(CommandStart())
 async def start(message: Message, state: FSMContext) -> None:
     await state.clear()
-    # Two keyboards, two jobs: the persistent one makes sure reopening the bot
-    # is never a blank chat, the inline one is the menu itself.
-    await message.answer(texts.WELCOME_BACK, reply_markup=keyboards.begin())
-    await message.answer(texts.START, reply_markup=keyboards.modes())
+    # Two keyboards, two jobs, and a message can carry only one: the greeting
+    # brings the persistent button, the next message brings the menu.
+    await message.answer(texts.START, reply_markup=keyboards.begin())
+    await message.answer(texts.CHOOSE_MODE, reply_markup=keyboards.modes())
 
 
 @router.message(F.text == texts.BEGIN)
@@ -35,7 +35,7 @@ async def begin(message: Message, state: FSMContext) -> None:
     Начать» as the genre.
     """
     await state.clear()
-    await message.answer(texts.START, reply_markup=keyboards.modes())
+    await message.answer(texts.CHOOSE_MODE, reply_markup=keyboards.modes())
 
 
 @router.message(Command("help"))

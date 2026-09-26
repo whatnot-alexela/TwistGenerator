@@ -192,6 +192,6 @@ async def test_the_persistent_button_opens_the_menu_mid_dialog(wired: Any) -> No
 
     await dispatcher.feed_update(bot, typed(texts.BEGIN))
 
-    assert texts.START in session.texts_sent()
+    assert texts.CHOOSE_MODE in session.texts_sent()
     assert await context.get_state() is None
     assert (await context.get_data()).get("genre") is None
